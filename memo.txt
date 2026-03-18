@@ -4,3 +4,32 @@
 
 인프라 구축: Supabase 대신 AWS EC2를 대여하고, 고정 IP를 설정해 서버를 직접 올리기
 데이터 고도화: 잡코리아에 없는, 개발자만을 위한 **'Github 연동 기능'**이나 '기술 블로그 자동 요약' 같은 항목을 추가
+
+내 프로젝트와 비슷한 '자소설닷컴' 과 차별점
+개발자 커리어 허브라는 점을 더 강조해 GithubAPI 연동을 통해 깃허브 레포지토리 기여도를 이력서에 그래프로 띄움
+"개인별 서브도메인" 자동 할당 기능 (B2C 서비스화) 를 통한 사용자 전용 링크를 만듦.
+
+
+One Resume 디자인:
+1. 정보 구조 설계
+사용자가 접속해서 '이력서 작성 -> 관리 -> 공유'까지 가는 경로를 먼저 짜보는 단계입니다. 메뉴 구성을 어떻게 할지 정해요.
+
+2. 와이어프레임 그리기
+색상이나 폰트 고민은 빼고, 사각형과 선으로만 화면 배치를 해보는 겁니다. (예: 왼쪽엔 사이드바, 오른쪽엔 이력서 편집창)
+
+3. 디자인 시스템 잡기
+버튼 색깔(예: 신뢰감을 주는 블루?), 폰트 크기, 간격 규칙을 미리 정해서 나중에 CSS 짤 때 고민을 없애주는 작업입니다.
+
+4. 핵심 컴포넌트 디자인
+'이력서 카드 리스트'나 '경력 사항 입력 폼' 같은 반복되는 요소를 피그마에서 예쁘게 그려보는 겁니다.
+
+
+Figma:
+Saturn (배치/레이아웃 담당): "뼈대"
+https://www.figma.com/design/UMxc0sdqt78bo3srHGx3L2/%F0%9F%AA%90-Saturn-Web-UI-KIT---FREE-Version---Design-System--Community-?node-id=403-11605&t=hr8LVyZdWBLyyMia-1
+사용할 부분: 반응형 그리드(Desktop, Tablet, Mobile), 사이드바의 폭, 대시보드의 전체적인 구도.
+
+
+Dialy (디자인/마감 담당): "피부와 화장"
+https://www.figma.com/design/hx2UxeE2X2QcXvFQk0on60/Dialy-UI-Kit-%7C-Free-Mobile-and-Web-Interface-Design-Kit--Community-?node-id=1-2&t=WiWlEqs8C3BJpBUF-1
+사용할 부분: 버튼의 둥근 정도(Border-radius), 그림자 깊이(Box-shadow), 폰트 스타일, 아이콘 느낌, 입력창의 정교한 디테일.
