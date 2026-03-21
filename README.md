@@ -4,19 +4,19 @@
 > **한 번의 입력으로 모든 기업에 대응하는 스마트 이력서 관리 서비스**
 
 ## 👥 팀원 소개
-- **팀장 20211106(박정웅)**: 이력서 관리
-- **팀원 권민석**:  공동구매/구독 서비스
-- **팀원 박태주**: 
-- **팀원 정현우**: 캠퍼스 내의 물품 공유&대여 플랫폼
-- **팀원 최현민**: 주차관리
-- **팀원 재영**:
+- **팀장 20211106(박정웅)**: 데이터베이스/AWS 서버 관리
+- **팀원 권민석**: 백앤드 담당
+- **팀원 정현우**: Figma디자인 레이아웃/ 설계
+- **팀원 최현민**: 프론트앤드 담당
 
 ## 🛠 기술 스택 (Tech Stack)
 - **Frontend**: React.js, Tailwind CSS
-- **Backend**: Node.js, Python (FastAPI)
-- **Database**: Supabase (PostgreSQL), AWS, MySQL
+- **Backend**: Node.js
+- **Database**: MySQL
+- **Infrastructure**: AWS (EC2, S3, R53)
+- **DevOps**: Nginx
 - **AI**: OpenAI GPT-4o-mini
-- **Tools**: GitHub, Figma, VS Code
+- **Tools**: GitHub, Figma, VS Code, Notion, PuTTY, WinSCP
 
 ## ✨ 주요 기능
 1. **Master Resume**: 이력서 데이터 통합 관리

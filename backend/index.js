@@ -25,5 +25,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(port, () => {
-	console.log('서버가 실행중 http://localhost:${port}');
+	console.log('서버가 실행중 http://localhost:5000');
 });
