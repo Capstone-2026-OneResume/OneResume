@@ -35,3 +35,4 @@ https://www.figma.com/design/hx2UxeE2X2QcXvFQk0on60/Dialy-UI-Kit-%7C-Free-Mobile
 사용할 부분: 버튼의 둥근 정도(Border-radius), 그림자 깊이(Box-shadow), 폰트 스타일, 아이콘 느낌, 입력창의 정교한 디테일.
 
 깃허브 브랜치 테스트
+ㅎㅇ cmin03 
