@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. 사용자 정보
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  username  String
+  subdomain String   @unique // 여기에 user-id.oneresume.com의 id가 들어감.
+  resumes   Resume[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 2. 이력서 기본 정보
+model Resume {
+  id        Int       @id @default(autoincrement())
+  title     String    // 예: "백엔드 개발자 이력서"
+  theme     String    @default("classic")
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  projects  Project[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// 3. 프로젝트 경험
+model Project {
+  id          Int     @id @default(autoincrement())
+  name        String  // 프로젝트명
+  description String? @db.Text
+  techStack   String  // 사용 기술 (JSON 문자열 등으로 저장)
+  githubUrl   String?
+  resumeId    Int
+  resume      Resume  @relation(fields: [resumeId], references: [id])
+}
