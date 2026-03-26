@@ -13,26 +13,32 @@ datasource db {
 
 // 1. 사용자 정보
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  username  String
-  subdomain String   @unique // 여기에 user-id.oneresume.com의 id가 들어감.
+  id        			Int      @id @default(autoincrement())
+		username					String			@unique
+  email     			String   @unique
+  password  			String			// 나중에 로그인용.
+  subdomain 			String   @unique // 여기에 user-id.oneresume.com의 id가 들어감.
+		profileImage String? 	// 프로필 이미지 경로
+		bio										String? 	// 한 줄 소개
+		githuburl				String?
+		blogurl						String?
   resumes   Resume[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) // 이력서 생성일
+  updatedAt DateTime @updatedAt // 이력서 최종 수정일
 }
 
 // 2. 이력서 기본 정보
 model Resume {
   id        Int       @id @default(autoincrement())
-  title     String    // 예: "백엔드 개발자 이력서"
+  title     String    // 이력서 제목
   theme     String    @default("classic")
+		education String?			// "학교|전공|학점|상태" 형태 또는 별도 모델
+		skills				String?			// "기술 스택 부분"
+		projects		Project[]
   userId    Int
   user      User      @relation(fields: [userId], references: [id])
-  projects  Project[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now()) // 데이터 관리의 신뢰도: 이력서 하단에 "최종수정일: 2026..." 같은 문구를 자동으로 넣어주면, 인사담당자등 이 지원자는 정보를 계속 업데이트하는구나라고 신뢰를 줄 수 있음.
+  updatedAt DateTime  @updatedAt // 나중에 사용자가 이력서를 여러 개 만들었을 때, "가장 최근에 수정된 이력서"를 상단에 보여주려면 필수, 디버깅에 효율적임.
 }
 
 // 3. 프로젝트 경험
@@ -40,7 +46,9 @@ model Project {
   id          Int     @id @default(autoincrement())
   name        String  // 프로젝트명
   description String? @db.Text
+		role								String? // 담당 역할
   techStack   String  // 사용 기술 (JSON 문자열 등으로 저장)
+		prtiod						String?
   githubUrl   String?
   resumeId    Int
   resume      Resume  @relation(fields: [resumeId], references: [id])
