@@ -1,4 +1,3 @@
-//미리보기 담당
 import React from "react";
 
 const ResumePreview = React.forwardRef(({ formData }, ref) => {
@@ -20,7 +19,6 @@ const ResumePreview = React.forwardRef(({ formData }, ref) => {
         <div className="flex justify-center items-center gap-4 text-slate-600 text-sm">
           <span>{formData.email || "Email"}</span>
           
-          {/* 조건부 렌더링: 링크가 있을 때만 보여줌 */}
           {formData.githubUrl && (
             <>
               <span className="text-slate-300">|</span>
@@ -57,7 +55,7 @@ const ResumePreview = React.forwardRef(({ formData }, ref) => {
           </section>
         )}
 
-        {/* 기술 스택 섹션 */}
+        {/* 기술 스택 섹션 (조건문 다이어트 완료) */}
         {formData.skills && (
           <section>
             <h3 className="text-sm uppercase tracking-widest text-slate-800 font-black mb-3 border-b border-slate-800 pb-1">
@@ -73,14 +71,13 @@ const ResumePreview = React.forwardRef(({ formData }, ref) => {
           </section>
         )}
 
-        {/* 프로젝트 섹션 (동적 배열 렌더링) */}
+        {/* 프로젝트 섹션 (조건문 다이어트 완료) */}
         <section>
           <h3 className="text-sm uppercase tracking-widest text-slate-800 font-black mb-4 border-b border-slate-800 pb-1">
             Projects & Experience
           </h3>
           <div className="space-y-6">
             {formData.projects.map((project, index) => (
-              // 프로젝트 이름이나 설명이 하나라도 있을 때만 렌더링
               (project.name || project.description) && (
                 <div key={index} className="relative pl-4 border-l-2 border-slate-300">
                   <div className="absolute w-2 h-2 bg-slate-800 rounded-full -left-[5px] top-1.5"></div>
@@ -101,7 +98,7 @@ const ResumePreview = React.forwardRef(({ formData }, ref) => {
               )
             ))}
             
-            {/* 프로젝트가 완전히 비어있을 때 안내 문구 */}
+            {/* 비어있을 때 안내 문구 */}
             {formData.projects.length === 1 && !formData.projects[0].name && !formData.projects[0].description && (
               <p className="text-slate-400 text-sm italic">프로젝트 경험을 추가해주세요.</p>
             )}

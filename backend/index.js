@@ -19,19 +19,108 @@ app.get('/', (req, res) => {
   res.send('OneResume 백엔드 서버가 아주 잘 돌아가고 있습니다! 🚀');
 });
 
-// 2. 이력서 저장 API (테스트용)
-app.post('/api/save-resume', (req, res) => {
-  const { name, email, education, skills } = req.body;
-  
-  console.log('--- 새로운 이력서 데이터 접수 ---');
-  console.log('이름:', name);
-  console.log('이메일:', email);
-  console.log('학력:', education);
-  console.log('기술:', skills);
+// 2. 이력서 저장 API (DB 연동 완료)
+app.post('/api/save-resume', async (req, res) => {
+  try {
+    // 프론트엔드에서 보낸 데이터 구조 분해 할당
+    const {
+      username, email, subdomain, bio, githubUrl, blogUrl,
+      resumeTitle, school, major, gpa, skills, projects
+    } = req.body;
 
-  res.json({
-    message: `${name}님의 이력서(학력: ${education}) 데이터가 서버에 잘 전달되었습니다!`
-  });
+    // 1) 필수 값 체크 (이메일과 서브도메인은 고유값이므로 필수)
+    if (!email || !subdomain) {
+      return res.status(400).json({ message: "이메일과 개인 도메인은 필수 입력 사항입니다." });
+    }
+
+    // 2) 3칸으로 쪼개진 학력 데이터를 DB 저장을 위해 하나로 결합
+    // 예: "한남대학교 | 컴퓨터공학과 | 4.0/4.5"
+    const educationArr = [school, major, gpa].filter(Boolean);
+    const educationString = educationArr.length > 0 ? educationArr.join(" | ") : null;
+
+    // 3) 프로젝트 배열에서 이름이나 설명이 있는 '유효한' 프로젝트만 필터링
+    const validProjects = Array.isArray(projects) 
+      ? projects.filter(p => p.name || p.description).map(p => ({
+          name: p.name || "",
+          period: p.period || "",
+          role: p.role || "",
+          techStack: p.techStack || "",
+          description: p.description || ""
+        }))
+      : [];
+
+    console.log(`--- [${username}]님의 데이터 저장 시작 ---`);
+
+    // 4) User 데이터 저장 (upsert: 이메일 기준. 있으면 수정, 없으면 생성)
+    const user = await prisma.user.upsert({
+      where: { email: email },
+      update: {
+        username: username || "",
+        subdomain: subdomain,
+        bio: bio || "",
+        githubUrl: githubUrl || "",
+        blogUrl: blogUrl || ""
+      },
+      create: {
+        email: email,
+        password: "temp_password_123", // 로그인 기능 전까지 사용할 임시 비밀번호
+        username: username || "이름 없음",
+        subdomain: subdomain,
+        bio: bio || "",
+        githubUrl: githubUrl || "",
+        blogUrl: blogUrl || ""
+      }
+    });
+
+    // 5) 해당 유저의 기존 이력서가 있는지 확인
+    const existingResume = await prisma.resume.findFirst({
+      where: { userId: user.id }
+    });
+
+    if (existingResume) {
+      // 6-A) 기존 이력서가 있으면 -> 내용 업데이트 및 프로젝트 덮어쓰기 (기존 프로젝트 삭제 후 재생성)
+      await prisma.resume.update({
+        where: { id: existingResume.id },
+        data: {
+          title: resumeTitle || "프론트엔드 개발자 이력서",
+          education: educationString,
+          skills: skills || "",
+          projects: {
+            deleteMany: {}, // 기존 프로젝트 싹 지우기
+            create: validProjects // 새로 넘어온 프로젝트들 만들기
+          }
+        }
+      });
+    } else {
+      // 6-B) 기존 이력서가 없으면 -> 이력서와 프로젝트 새로 생성
+      await prisma.resume.create({
+        data: {
+          userId: user.id,
+          title: resumeTitle || "프론트엔드 개발자 이력서",
+          education: educationString,
+          skills: skills || "",
+          projects: {
+            create: validProjects
+          }
+        }
+      });
+    }
+
+    console.log(`--- [${username}]님의 데이터 DB 저장 성공! ---`);
+    res.status(200).json({ message: "이력서가 DB에 성공적으로 저장되었습니다! 🚀" });
+
+  } catch (error) {
+    console.error("이력서 저장 중 에러 발생:", error);
+    
+    // 이메일이나 서브도메인이 중복될 때 발생하는 Prisma 에러 처리
+    if (error.code === 'P2002') {
+      return res.status(400).json({ 
+        message: "이미 사용 중인 이메일이거나 개인 도메인입니다. 다른 값을 입력해주세요." 
+      });
+    }
+
+    res.status(500).json({ message: "서버 저장 중 오류가 발생했습니다." });
+  }
 });
 
 // 3. 서브도메인 기반 유저 데이터 조회 API (핵심!)

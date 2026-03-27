@@ -20,8 +20,8 @@ model User {
   subdomain 			String   @unique // 여기에 user-id.oneresume.com의 id가 들어감.
 		profileImage String? 	// 프로필 이미지 경로
 		bio										String? 	// 한 줄 소개
-		githuburl				String?
-		blogurl						String?
+		githubUrl				String?  // 깃허브 링크 
+		blogUrl						String?		// 블로그 링크
   resumes   Resume[]
   createdAt DateTime @default(now()) // 이력서 생성일
   updatedAt DateTime @updatedAt // 이력서 최종 수정일
@@ -47,8 +47,8 @@ model Project {
   name        String  // 프로젝트명
   description String? @db.Text
 		role								String? // 담당 역할
-  techStack   String  // 사용 기술 (JSON 문자열 등으로 저장)
-		prtiod						String?
+  techStack   String?  // 사용 기술 (JSON 문자열 등으로 저장)
+		period						String?
   githubUrl   String?
   resumeId    Int
   resume      Resume  @relation(fields: [resumeId], references: [id])
