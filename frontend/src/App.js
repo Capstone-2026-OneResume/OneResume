@@ -8,10 +8,18 @@ function App() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+				subdomain: "",
+				bio: "",
+				githubUrl: "",
+				blogUrl: "",
+				resumeTitle: "개발자 이력서",
     education: "",
     skills: "",
-    summary: "",
-    experience: "",
+				projects: [
+					{ name: "", description: "", role: "", techStack: "", period: "" } // 프로젝트 동적 배열
+				],
+    // summary: "",
+    // experience: "",
   });
 
 		const [isSubdomainMode, setIsSubdomainMode] = useState(false);
@@ -46,12 +54,17 @@ function App() {
 					//  DB 데이터 구조를 현재 From 데이터 형식에 맞게 매핑
 					const resume = user.resumes[0] || {};
 					setFormData({
-						name: user.username,
-						email: user.email,
-						education: "학력 정보 없음", //DB 설계에 따라 보완 필요.
-						skills: resume.projects?.map(p => p.techStack).join(", ") || "",
-						summary: resume.title || "",
-						experience: resume.projects?.map(p => `${p.name}: ${p.description}`).join("\n\n") || "",
+						name: user.username || "",
+						email: user.email || "",
+						subdomain: user.subdomain || "",
+						bio: user.bio || "",
+						githubUrl: user.githubUrl || "",
+						blogUrl: user.blogUrl || "",
+						resumeTitle: resume.title || "이력서",
+						education: resume.education || "", //DB 설계에 따라 보완 필요.
+						skills: resume.projects?.length > 0
+						? resume.projects
+						: [{ name: "", description: "", role: "", techStack: "", period: "" }],
 					});
 					setIsSubdomainMode(true);
 				} 
@@ -61,17 +74,40 @@ function App() {
 				} finally {
 					setLoading(false);
 				}
-			}
+			};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+		// 동적 프로젝트 입력 핸들러
+		const handleProjectChange = (index, e) => {
+			const { name, value } = e.target;
+			const newProjects = [...formData.projects];
+			newProjects[index][name] = value;
+			setFormData({ ...formData, projects: newProjects });
+		};
+
+		// 프로젝트 간 추가
+		const addProject = () => {
+			setFormData({
+				...formData,
+				projects: [...formData.projects, { name: "", description: "", role: "",techStack: "", period: "" }]
+			});
+		};
+
+		// 프로젝트 간 삭제
+		const removeproject = (index) => {
+			const newProjects = formData.projects.filter((_, i) => i !== index);
+			setFormData({ ...formData, projects: newProjects });
+		};
+
   const downloadPDF = () => {
     window.print();
   };
 
+		// 서버로 전송
   const handleSubmit = (e) => {
     e.preventDefault();
     fetch("http://localhost:5000/api/save-resume", {
@@ -88,7 +124,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4">
-      <header className="text-center mb-12 relative">
+      <header className="text-center mb-12 relative print:hidden">
         <h1 className="text-4xl font-black text-slate-800 mb-2">OneResume</h1>
         <p className="text-slate-500 font-medium text-lg">
           {isSubdomainMode ? `${formData.name}님의 브랜드 페이지` : "통합 이력서 관리를 위한 정밀 데이터 구축"}
@@ -107,6 +143,9 @@ function App() {
         <ResumeForm
           formData={formData}
           handleChange={handleChange}
+										handleProjectChange={handleProjectChange}
+										addProject={addProject}
+										removeproject={removeproject}
           handleSubmit={handleSubmit}
         />
 							)}
