@@ -1,6 +1,6 @@
 import React from "react";
 
-function ResumeForm({ formData, handleChange, handleProjectChange, addProject, removeProject, handleSubmit }) {
+function ResumeForm({ formData, handleChange, handleProjectChange, addProject, removeProject, handleSubmit, handleGithubSync }) {
   return (
     <div className="w-full lg:w-[500px] bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-h-[80vh] overflow-y-auto custom-scrollbar">
       <h2 className="text-xl font-bold mb-6 text-slate-800 border-l-4 border-blue-600 pl-3">
@@ -36,10 +36,28 @@ function ResumeForm({ formData, handleChange, handleProjectChange, addProject, r
         </div>
 
         {/* 링크 정보 */}
-        <div className="grid grid-cols-2 gap-4">
+										<div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">GitHub 링크</label>
-            <input type="text" name="githubUrl" value={formData.githubUrl} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="github.com/..." />
+            <label className="block text-sm font-bold text-slate-700 mb-1">GitHub 링크 또는 ID</label>
+            <div className="relative flex items-center">
+              <input 
+                type="text" 
+                name="githubUrl" 
+                value={formData.githubUrl} 
+                onChange={handleChange} 
+                className="w-full p-3 pr-24 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" 
+                placeholder="PARKUNGJUNG" 
+              />
+              {formData.githubUrl.trim() && (
+                <button 
+                  type="button" 
+                  onClick={handleGithubSync}
+                  className="absolute right-2 top-2 bg-slate-800 hover:bg-slate-900 text-white p-2 px-3 rounded-lg text-xs font-bold whitespace-nowrap transition-all active:scale-95 shadow"
+                >
+                  연동
+                </button>
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">블로그 링크</label>

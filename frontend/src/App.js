@@ -6,19 +6,19 @@ import axios from "axios";
 
 function App() {
   const [formData, setFormData] = useState({
-    username: "", // name 대신 username으로 백엔드와 통일
+    username: "",
     email: "",
     subdomain: "",
     bio: "",
     githubUrl: "",
     blogUrl: "",
     resumeTitle: "개발자 이력서",
-    school: "", // 학교명
-    major: "",  // 전공
-    gpa: "",    // 학점
+    school: "",
+    major: "",
+    gpa: "",
     skills: "",
     projects: [
-      { name: "", description: "", role: "", techStack: "", period: "" } // 프로젝트 동적 배열
+      { name: "", description: "", role: "", techStack: "", period: "" }
     ],
   });
 
@@ -27,13 +27,9 @@ function App() {
   const resumeRef = useRef();
 
   useEffect(() => {
-    // 1. 서브도메인 판별 로직
     const host = window.location.hostname;
     const parts = host.split('.');
-
-    // localhost 테스트 시: leader.localhost:3000 ->  parts는 ['leader', 'localhost']
-    // 배포 시: leader.oneresume.com -> parts는 ['leader', 'oneresume', 'com']
-    const subdomain = (parts.length > 1 && parts[0] !== 'www' && parts[0] !== 'localhost' ) ? parts[0] : null;
+    const subdomain = (parts.length > 1 && parts[0] !== 'www' && parts[0] !== 'localhost') ? parts[0] : null;
 
     if (subdomain) {
       fetchUserData(subdomain);
@@ -43,15 +39,12 @@ function App() {
     }
   }, []);
 
-  // 2. DB에서 유저 데이터 가져오기 (서브도메인용)
   const fetchUserData = async (subdomain) => {
     try {
-      // EC2 배포 전이므로 로컬호스트 사용
       const response = await axios.get(`http://localhost:5000/api/user/${subdomain}`);
       const user = response.data;
 
       if (user) {
-        // DB 데이터 구조를 현재 Form 데이터 형식에 맞게 완벽 매핑
         const resume = user.resumes[0] || {};
         const eduParts = resume.education ? resume.education.split(" | ") : [];
         
@@ -63,13 +56,13 @@ function App() {
           githubUrl: user.githubUrl || "",
           blogUrl: user.blogUrl || "",
           resumeTitle: resume.title || "개발자 이력서",
-          school: eduParts[0] || "", // 쪼갠 데이터 1: 학교명
-          major: eduParts[1] || "",  // 쪼갠 데이터 2: 전공
-          gpa: eduParts[2] || "",    // 쪼갠 데이터 3: 학점
-          skills: resume.skills || "", // (수정) 진짜 skills 데이터 매핑!
+          school: eduParts[0] || "",
+          major: eduParts[1] || "",
+          gpa: eduParts[2] || "",
+          skills: resume.skills || "",
           projects: resume.projects?.length > 0
             ? resume.projects
-            : [{ name: "", description: "", role: "", techStack: "", period: "" }], // (수정) projects 배열 매핑!
+            : [{ name: "", description: "", role: "", techStack: "", period: "" }],
         });
         setIsSubdomainMode(true);
       } 
@@ -86,7 +79,81 @@ function App() {
     setFormData({ ...formData, [name]: value });
   };
 
-  // 동적 프로젝트 입력 핸들러
+  const handleGithubSync = async () => {
+    let url = formData.githubUrl.trim();
+    if (!url) {
+      alert("GitHub 링크 또는 아이디를 먼저 입력해주세요!");
+      return;
+    }
+    
+    let username = url;
+    if (url.includes("github.com/")) {
+      const splitUrl = url.split("github.com/")[1];
+      username = splitUrl.split("/")[0];
+    }
+
+    try {
+      console.log(`--- [${username}]님의 GitHub 전체 데이터를 호출합니다 ---`);
+
+      let repos = []; // 전체 레포지토리를 담을 빈 바구니
+      let page = 1;
+      let keepFetching = true; // 데이터를 계속 가져올지 결정하는 플래그
+
+      // 사용자에게 로딩 중임을 알려줍니다.
+      alert(`${username}님의 전체 프로젝트 데이터를 불러오는 중입니다. 프로젝트가 많은 경우 수 초가 걸릴 수 있습니다...`);
+
+      // 데이터를 다 가져올 때까지 반복합니다.
+      while (keepFetching) {
+        // per_page=100 (깃허브 API 최대치)로 설정하여 한 페이지당 최대한 많이 가져옵니다.
+        // sort=updated를 유지하여 최근 업데이트 순으로 데이터를 누적합니다.
+        const response = await axios.get(
+          `https://api.github.com/users/${username}/repos?sort=updated&per_page=100&page=${page}`
+        );
+        
+        if (response.data.length === 0) {
+          keepFetching = false; // 더 이상 데이터가 없으면 탈출
+        } else {
+          repos = [...repos, ...response.data]; // 데이터를 배열에 누적
+          page++; // 다음 페이지
+        }
+
+        // 무한루프 방지 안전장치: 실제 배포 시에는 제거하거나 더 늘려야 합니다.
+        // (깃허브 API 호출 한도를 지키기 위해 안전하게 10페이지까지만)
+        if (page > 10) keepFetching = false; 
+      }
+
+      if (repos.length === 0) {
+        alert("공개된 레포지토리가 없습니다.");
+        return;
+      }
+
+      // 3. 가져온 전체 데이터 매핑 (수정했던 null 방어막 유지)
+      const fetchedProjects = repos.map(repo => ({
+        name: repo.name || "",
+        description: repo.description || "GitHub에서 자동 연동된 프로젝트입니다.",
+        role: "Developer",
+        techStack: repo.language || "", //	대표 언어를 기술 스택으로 간단히 매핑 (원하는 경우 더 정교하게 변경 가능)
+        period: `${(repo.created_at || "").substring(0, 7)} ~ ${(repo.updated_at || "").substring(0, 7)}`
+      }));
+
+      // 4. 기술 스택 추출 (중복 제거)
+      const repoLanguages = repos.map(r => r.language).filter(Boolean);
+      const languages = [...new Set(repoLanguages)].join(", ");
+
+      // 5. 상태 업데이트
+      setFormData(prev => ({
+        ...prev,
+        skills: prev.skills ? `${prev.skills}, ${languages}` : languages,
+        projects: fetchedProjects //	기존 프로젝트와 합칩니다. (원하는 경우 기존 프로젝트를 제거할 수도 있습니다)
+      }));
+
+      alert(`GitHub 연동 성공[${username}]님의 전체 프로젝트 ${fetchedProjects.length}개를 모두 가져왔습니다.`);
+    } catch (error) {
+      console.error("GitHub 연동 에러:", error);
+      alert(`GitHub 데이터를 불러오는 데 실패했습니다. 아이디가 [${username}]이 맞는지 확인해주세요. API 호출 제한일 수도 있습니다.`);
+    }
+  };
+
   const handleProjectChange = (index, e) => {
     const { name, value } = e.target;
     const newProjects = [...formData.projects];
@@ -94,7 +161,6 @@ function App() {
     setFormData({ ...formData, projects: newProjects });
   };
 
-  // 프로젝트 칸 추가
   const addProject = () => {
     setFormData({
       ...formData,
@@ -102,8 +168,7 @@ function App() {
     });
   };
 
-  // 프로젝트 칸 삭제
-  const removeproject = (index) => {
+  const removeProject = (index) => {
     const newProjects = formData.projects.filter((_, i) => i !== index);
     setFormData({ ...formData, projects: newProjects });
   };
@@ -112,7 +177,6 @@ function App() {
     window.print();
   };
 
-  // 서버로 전송
   const handleSubmit = (e) => {
     e.preventDefault();
     fetch("http://localhost:5000/api/save-resume", {
@@ -143,19 +207,17 @@ function App() {
       </header>
 
       <div className={`max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-10 ${isSubdomainMode ? 'justify-center' : ''}`}>
-        {/* 서브도메인 모드가 아닐 때만 입력 폼을 보여줌 */}
         {!isSubdomainMode && (
           <ResumeForm
             formData={formData}
             handleChange={handleChange}
             handleProjectChange={handleProjectChange}
             addProject={addProject}
-            removeProject={removeproject}
+            removeProject={removeProject}
             handleSubmit={handleSubmit}
+            handleGithubSync={handleGithubSync}
           />
         )}
-
-        {/* 미리보기는 항상 보여주되, 서브도메인 모드면 중앙에 배치 */}
         <div className={isSubdomainMode ? "mx-auto" : ""}>
           <ResumePreview formData={formData} ref={resumeRef} />
         </div>
