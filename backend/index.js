@@ -33,7 +33,15 @@ app.post('/api/save-resume', async (req, res) => {
       return res.status(400).json({ message: "이메일과 개인 도메인은 필수 입력 사항입니다." });
     }
 
-    // 2) 3칸으로 쪼개진 학력 데이터를 DB 저장을 위해 하나로 결합
+				// 2) 서브도메인 예약어(금지어) 차단 로직
+				const forbiddenWords = ['admin', 'api', 'www', 'mail', 'master', 'root', 'help', 'login', '너임마청년']
+				if (forbiddenWords.includes(subdomain.toLowerCase())) {
+					return res.status(400).json({
+						message: "해당 도메인은 부적절합니다. 다른 도메인을 입력해주세요."
+					});
+				}
+
+    // 3) 3칸으로 쪼개진 학력 데이터를 DB 저장을 위해 하나로 결합
     // 예: "한남대학교 | 컴퓨터공학과 | 4.0/4.5"
     const educationArr = [school, major, gpa].filter(Boolean);
     const educationString = educationArr.length > 0 ? educationArr.join(" | ") : null;
