@@ -35,10 +35,29 @@ function App() {
     if (subdomain) {
       fetchUserData(subdomain);
     } else {
-      setIsSubdomainMode(false);
-      setLoading(false);
+					//	서브도메인이 없을 때는 로컬 스토리지에서 임시 데이터와 테마 설정을 불러옵니다.
+					const savedData = localStorage.getItem("oneresume-draft");
+					const savedTheme = localStorage.getItem("oneresume-theme");
+
+					if (savedData) {
+						setFormData(JSON.parse(savedData));
+					}
+
+					if (savedTheme) {
+						setIsDarkMode(savedTheme === "true");
+					}
+
+					setIsSubdomainMode(false);
+					setLoading(false);
     }
   }, []);
+
+		useEffect(() => { //	사용자가 서브도메인 모드가 아닐 때만 로컬 스토리지에 데이터를 저장합니다. (서브도메인 모드에서는 DB에서 불러온 데이터가 최신이므로 저장하지 않음)
+			if (!isSubdomainMode && !loading) {
+				localStorage.setItem("oneresume-draft", JSON.stringify(formData));
+				localStorage.setItem("oneresume-theme", isDarkMode.toString());
+			}
+		}, [formData, isDarkMode, isSubdomainMode, loading]);
 
   const fetchUserData = async (subdomain) => {
     try {
@@ -197,6 +216,8 @@ function App() {
     })
       .then((res) => res.json())
       .then((data) => alert(data.message))
+						// 저장 성공 시 로컬스토리지 비우기 (서브도메인 모드에서는 DB에서 불러온 데이터가 최신이므로 저장하지 않음)
+      // localStorage.removeItem("oneresume-draft");
       .catch((err) => console.error("에러:", err));
   };
 
