@@ -18,15 +18,13 @@ function App() {
     gpa: "",
     skills: "",
     projects: [
-      { name: "", description: "", role: "", techStack: "", period: "" }
+      { id: "init-1", name: "", description: "", role: "", techStack: "", period: "" } //	초기 프로젝트 하나는 빈 값으로 시작 (사용자가 추가하기 전까지는 빈 프로젝트로 유지)
     ],
   });
 
   const [isSubdomainMode, setIsSubdomainMode] = useState(false);
   const [loading, setLoading] = useState(true);
-
 		const [isDarkMode, setIsDarkMode] = useState(false); //	다크 모드 상태 추가
-
   const resumeRef = useRef(); //	PDF 변환 시 참조할 이력서 미리보기 영역
 
   useEffect(() => {
@@ -64,8 +62,8 @@ function App() {
           gpa: eduParts[2] || "",
           skills: resume.skills || "",
           projects: resume.projects?.length > 0
-            ? resume.projects
-            : [{ name: "", description: "", role: "", techStack: "", period: "" }],
+            ? resume.projects.map((p, i) => ({ ...p, id: `db-${i}` })) //	프로젝트마다 고유 ID 추가 (렌더링 최적화용)
+            : [{ id: "init-1", name: "", description: "", role: "", techStack: "", period: "" }],
         });
         setIsSubdomainMode(true);
       } 
@@ -96,8 +94,7 @@ function App() {
     }
 
     try {
-      console.log(`--- [${username}]님의 GitHub 전체 데이터를 호출합니다 ---`);
-
+      alert(`--- [${username}]님의 GitHub 전체 데이터를 호출합니다 ---`);
       let repos = []; // 전체 레포지토리를 담을 빈 바구니
       let page = 1;
       let keepFetching = true; // 데이터를 계속 가져올지 결정하는 플래그
@@ -131,11 +128,12 @@ function App() {
       }
 
       // 3. 가져온 전체 데이터 매핑 (수정했던 null 방어막 유지)
-      const fetchedProjects = repos.map(repo => ({
+      const fetchedProjects = repos.map((repo, index) => ({
+								id: `github-${repo.id || index}-{Date.now()}`, //	고유 ID (깃허브 ID + 타임스탬프)
         name: repo.name || "",
         description: repo.description || "GitHub에서 자동 연동된 프로젝트입니다.",
         role: "Developer",
-        techStack: repo.language || "", //	대표 언어를 기술 스택으로 간단히 매핑 (원하는 경우 더 정교하게 변경 가능)
+        techStack: repo.language || "", //	대표 언어를 기술 스택으로 간단히 매핑
         period: `${(repo.created_at || "").substring(0, 7)} ~ ${(repo.updated_at || "").substring(0, 7)}`
       }));
 
@@ -167,7 +165,7 @@ function App() {
   const addProject = () => {
     setFormData({
       ...formData,
-      projects: [...formData.projects, { name: "", description: "", role: "", techStack: "", period: "" }]
+      projects: [...formData.projects, { id: `manual-${Date.now()}`, name: "", description: "", role: "", techStack: "", period: "" }]
     });
   };
 
@@ -175,6 +173,16 @@ function App() {
     const newProjects = formData.projects.filter((_, i) => i !== index);
     setFormData({ ...formData, projects: newProjects });
   };
+
+		const handleDragEnd = (result) => {
+			if	(!result.destination) return; // 드롭 위치가 유효하지 않으면 무시
+
+			const items = Array.from(formData.projects);
+			const [reorderedItem] = items.splice(result.source.index, 1); // 드래그한 아이템 제거
+			items.splice(result.destination.index, 0, reorderedItem); // 드롭 위치에 아이템 삽입
+
+			setFormData({ ...formData, projects: items }); // 상태 업데이트
+		};
 
   const downloadPDF = () => {
     window.print();
@@ -235,6 +243,7 @@ function App() {
             removeProject={removeProject}
             handleSubmit={handleSubmit}
             handleGithubSync={handleGithubSync}
+												handleDragEnd={handleDragEnd}
           />
         )}
         <div className={isSubdomainMode ? "mx-auto" : ""}>

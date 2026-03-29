@@ -1,130 +1,187 @@
 import React from "react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
-function ResumeForm({ formData, handleChange, handleProjectChange, addProject, removeProject, handleSubmit, handleGithubSync }) {
+const ResumeForm = ({
+  formData,
+  handleChange,
+  handleProjectChange,
+  addProject,
+  removeProject,
+  handleSubmit,
+  handleGithubSync,
+  handleDragEnd 
+}) => {
   return (
-    <div className="w-full lg:w-[500px] bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-h-[80vh] overflow-y-auto custom-scrollbar">
-      <h2 className="text-xl font-bold mb-6 text-slate-800 border-l-4 border-blue-600 pl-3">
-        정보 입력
-      </h2>
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-2xl border border-slate-100 print:hidden">
+      <h2 className="text-2xl font-bold mb-6 text-slate-800">이력서 정보 입력</h2>
+
+      {/* 기본 정보 영역 */}
+      <div className="space-y-4 mb-8">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-600 mb-1">이름</label>
+            <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-600 mb-1">이메일</label>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" />
+          </div>
+        </div>
         
-        {/* 기본 정보 */}
+        {/* 서브도메인 입력 */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-600 mb-1">서브도메인 (영문/숫자)</label>
+          <div className="flex items-center">
+            <input type="text" name="subdomain" value={formData.subdomain} onChange={handleChange} placeholder="user-id" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-l-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" />
+            <span className="bg-slate-100 border border-l-0 border-slate-200 text-slate-500 p-3 rounded-r-xl font-medium">.oneresume.com</span>
+          </div>
+        </div>
+        
+								{/* 한 줄 소개 (Bio) 입력 */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-600 mb-1">한 줄 소개 (Bio)</label>
+          <input type="text" name="bio" value={formData.bio} onChange={handleChange} placeholder="성장을 멈추지 않는 개발자입니다." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" />
+        </div>
+      </div>
+
+      <hr className="my-8 border-slate-200" />
+
+      {/* 링크 및 GitHub 연동 영역 */}
+      <div className="space-y-4 mb-8">
+        <h3 className="text-lg font-bold text-slate-800 mb-4">링크 & 자동 연동</h3>
+        
+        <div className="relative">
+          <label className="block text-sm font-semibold text-slate-600 mb-1">GitHub 링크 (또는 아이디)</label>
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              name="githubUrl" 
+              value={formData.githubUrl} 
+              onChange={handleChange} 
+              placeholder="https://github.com/username"
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" 
+            />
+            {formData.githubUrl && (
+              <button 
+                type="button" 
+                onClick={handleGithubSync}
+                className="bg-slate-800 hover:bg-slate-900 text-white font-bold px-6 py-3 rounded-xl transition-all whitespace-nowrap shadow-md active:scale-95"
+              >
+                연동
+              </button>
+            )}
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-semibold text-slate-600 mb-1">기술 블로그 링크</label>
+          <input type="text" name="blogUrl" value={formData.blogUrl} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" />
+        </div>
+      </div>
+
+      <hr className="my-8 border-slate-200" />
+
+      {/* 학력 및 스킬 영역 */}
+      <div className="space-y-4 mb-8">
+        <h3 className="text-lg font-bold text-slate-800 mb-4">학력 및 기술 스택</h3>
         <div className="grid grid-cols-3 gap-4">
-          <div className="col-span-1">
-            <label className="block text-sm font-bold text-slate-700 mb-1">이름</label>
-            <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="홍길동" />
-          </div>
-          <div className="col-span-2">
-            <label className="block text-sm font-bold text-slate-700 mb-1">개인 도메인 (ID)</label>
-            <div className="flex">
-              <input type="text" name="subdomain" value={formData.subdomain} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-l-xl outline-none focus:ring-2 focus:ring-blue-500 " placeholder="hong" />
-              <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-slate-300 bg-slate-50 text-slate-500 text-sm font-medium whitespace-nowrap">
-                .oneresume.com
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="col-span-2">
-          <label className="block text-sm font-bold text-slate-700 mb-1">이메일</label>
-          <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="abc@example.com" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">한 줄 자기소개</label>
-          <input type="text" name="bio" value={formData.bio} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="성장을 멈추지 않는 프론트엔드 개발자" />
-        </div>
-
-        {/* 링크 정보 */}
-										<div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">GitHub 링크 또는 ID</label>
-            <div className="relative flex items-center">
-              <input 
-                type="text" 
-                name="githubUrl" 
-                value={formData.githubUrl} 
-                onChange={handleChange} 
-                className="w-full p-3 pr-24 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" 
-                placeholder="PARKUNGJUNG" 
-              />
-              {formData.githubUrl.trim() && (
-                <button 
-                  type="button" 
-                  onClick={handleGithubSync}
-                  className="absolute right-2 top-2 bg-slate-800 hover:bg-slate-900 text-white p-2 px-3 rounded-lg text-xs font-bold whitespace-nowrap transition-all active:scale-95 shadow"
-                >
-                  연동
-                </button>
-              )}
-            </div>
+            <label className="block text-sm font-semibold text-slate-600 mb-1">학교</label>
+            <input type="text" name="school" value={formData.school} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">블로그 링크</label>
-            <input type="text" name="blogUrl" value={formData.blogUrl} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="velog.io/..." />
+            <label className="block text-sm font-semibold text-slate-600 mb-1">전공</label>
+            <input type="text" name="major" value={formData.major} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-600 mb-1">학점</label>
+            <input type="text" name="gpa" value={formData.gpa} onChange={handleChange} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" />
           </div>
         </div>
-
-        {/* 학력 및 기술 (3단 분리 적용) */}
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">최종 학력</label>
-          <div className="grid grid-cols-3 gap-2">
-            <input type="text" name="school" value={formData.school} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="학교명" />
-            <input type="text" name="major" value={formData.major} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="전공" />
-            <input type="text" name="gpa" value={formData.gpa} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="학점 (예: 4.0/4.5)" />
-          </div>
+          <label className="block text-sm font-semibold text-slate-600 mb-1">기술 스택 (쉼표로 구분)</label>
+          <input type="text" name="skills" value={formData.skills} onChange={handleChange} placeholder="React, Node.js, MySQL" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all" />
         </div>
+      </div>
+
+      <hr className="my-8 border-slate-200" />
+
+      {/* 프로젝트 및 경험 (Drag & Drop) */}
+      <div className="mb-8">
+        <h3 className="text-lg font-bold text-slate-800 mb-4">주요 프로젝트 및 경험</h3>
         
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">보유 기술 (쉼표로 구분)</label>
-          <input type="text" name="skills" value={formData.skills} onChange={handleChange} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="React, Node.js, AWS" />
-        </div>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="projects-list">
+            {(provided) => (
+              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6">
+                
+                {formData.projects.map((project, index) => {
+                  const draggableId = project.id ? String(project.id) : `fallback-${index}`;
+                  
+                  return (
+                    <Draggable key={draggableId} draggableId={draggableId} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`p-6 rounded-2xl border transition-all ${
+                            snapshot.isDragging ? "bg-white shadow-2xl border-emerald-500 scale-[1.02] z-50" : "bg-slate-50 border-slate-200"
+                          }`}
+                        >
+                          <div
+                            {...provided.dragHandleProps}
+                            className="flex justify-center mb-4 cursor-grab active:cursor-grabbing text-slate-300 hover:text-emerald-500"
+                          >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM20 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM20 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM20 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
+                            </svg>
+                          </div>
 
-        {/* 동적 프로젝트 추가 영역 */}
-        <div className="pt-4 border-t border-slate-200 mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <label className="block text-sm font-bold text-slate-700">주요 프로젝트</label>
-            <button type="button" onClick={addProject} className="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors">
-              + 프로젝트 추가
-            </button>
-          </div>
-
-          {formData.projects.map((project, index) => (
-            <div key={index} className="p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4 relative">
-              {formData.projects.length > 1 && (
-                <button type="button" onClick={() => removeProject(index)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 text-sm font-bold">
-                  ✕ 삭제
-                </button>
-              )}
-              
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">프로젝트명</label>
-                  <input type="text" name="name" value={project.name} onChange={(e) => handleProjectChange(index, e)} className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="OneResume" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">진행 기간</label>
-                  <input type="text" name="period" value={project.period} onChange={(e) => handleProjectChange(index, e)} className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="2026.03 - 2026.06" />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold text-slate-500 mb-1">담당 역할 및 사용 기술</label>
-                  <input type="text" name="techStack" value={project.techStack} onChange={(e) => handleProjectChange(index, e)} className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="프론트엔드 (React, Tailwind)" />
-                </div>
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <label className="block text-xs font-bold text-slate-500 mb-1">프로젝트 이름</label>
+                              <input type="text" name="name" value={project.name} onChange={(e) => handleProjectChange(index, e)} className="w-full p-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-slate-500 mb-1">진행 기간</label>
+                              <input type="text" name="period" value={project.period} onChange={(e) => handleProjectChange(index, e)} placeholder="2023.01 ~ 2023.06" className="w-full p-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+                            </div>
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-xs font-bold text-slate-500 mb-1">사용 기술 (Tech Stack)</label>
+                            <input type="text" name="techStack" value={project.techStack} onChange={(e) => handleProjectChange(index, e)} className="w-full p-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-xs font-bold text-slate-500 mb-1">상세 설명</label>
+                            <textarea name="description" value={project.description} onChange={(e) => handleProjectChange(index, e)} rows="3" className="w-full p-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-none"></textarea>
+                          </div>
+                          <div className="flex justify-end">
+                            <button type="button" onClick={() => removeProject(index)} className="text-red-500 text-sm font-bold hover:text-red-600 transition-colors">
+                              ✕ 삭제
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  );
+                })}
+                
+                {provided.placeholder}
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">상세 내용 및 성과</label>
-                <textarea name="description" value={project.description} onChange={(e) => handleProjectChange(index, e)} rows="3" className="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm" placeholder="사용자 이력서 생성 기능 구현..."></textarea>
-              </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </Droppable>
+        </DragDropContext>
 
-        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all mt-4">
-          이력서 중앙 저장소로 전송
+        <button type="button" onClick={addProject} className="mt-6 w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all border border-slate-200 border-dashed">
+          + 프로젝트 추가
         </button>
-      </form>
-    </div>
+      </div>
+
+      <button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg py-4 rounded-2xl shadow-lg transition-all active:scale-95">
+        이력서 저장 및 퍼블리싱
+      </button>
+    </form>
   );
-}
+};
 
 export default ResumeForm;
