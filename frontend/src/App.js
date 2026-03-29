@@ -24,7 +24,10 @@ function App() {
 
   const [isSubdomainMode, setIsSubdomainMode] = useState(false);
   const [loading, setLoading] = useState(true);
-  const resumeRef = useRef();
+
+		const [isDarkMode, setIsDarkMode] = useState(false); //	다크 모드 상태 추가
+
+  const resumeRef = useRef(); //	PDF 변환 시 참조할 이력서 미리보기 영역
 
   useEffect(() => {
     const host = window.location.hostname;
@@ -198,12 +201,28 @@ function App() {
         <p className="text-slate-500 font-medium text-lg">
           {isSubdomainMode ? `${formData.username}님의 브랜드 페이지` : "통합 이력서 관리를 위한 정밀 데이터 구축"}
         </p>
+
+								{ /*	다크 모드 토글과 PDF 다운로드 버튼 섹션 */}
+								<div className="flex items-center justify-center gap-4 mt-6">
+									<button
+										onClick={() => setIsDarkMode(!isDarkMode)}
+										// 다크 모드 토글 버튼 스타일링 (상태에 따라 색상 변경)
+            className={`font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2 ${
+              isDarkMode 
+                ? "bg-slate-800 hover:bg-slate-900 text-white border border-slate-700" // 다크 모드일 때 (어두운 버튼)
+                : "bg-white hover:bg-slate-100 text-slate-800 border border-slate-200" // 라이트 모드일 때 (환하고 깔끔한 흰색 버튼)
+            }`}
+          >
+											{isDarkMode ? "☀️ 라이트 모드" : "🌙 다크 모드"}
+										</button>
+
         <button
           onClick={downloadPDF}
-          className="mt-6 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2 mx-auto"
+          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2"
         >
           <span>PDF로 내보내기</span>
         </button>
+								</div>
       </header>
 
       <div className={`max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-10 ${isSubdomainMode ? 'justify-center' : ''}`}>
@@ -219,7 +238,7 @@ function App() {
           />
         )}
         <div className={isSubdomainMode ? "mx-auto" : ""}>
-          <ResumePreview formData={formData} ref={resumeRef} />
+          <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} />
         </div>
       </div>
     </div>
