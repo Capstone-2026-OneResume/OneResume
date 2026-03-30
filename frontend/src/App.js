@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ResumeForm from "./components/ResumeForm";
 import ResumePreview from "./components/ResumePreview";
 import axios from "axios";
+import toast, { Toaster } from "react-hot-toast";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -38,15 +39,12 @@ function App() {
 					//	서브도메인이 없을 때는 로컬 스토리지에서 임시 데이터와 테마 설정을 불러옵니다.
 					const savedData = localStorage.getItem("oneresume-draft");
 					const savedTheme = localStorage.getItem("oneresume-theme");
-
 					if (savedData) {
 						setFormData(JSON.parse(savedData));
 					}
-
 					if (savedTheme) {
 						setIsDarkMode(savedTheme === "true");
 					}
-
 					setIsSubdomainMode(false);
 					setLoading(false);
     }
@@ -102,7 +100,7 @@ function App() {
   const handleGithubSync = async () => {
     let url = formData.githubUrl.trim();
     if (!url) {
-      alert("GitHub 링크 또는 아이디를 먼저 입력해주세요!");
+      toast.error("GitHub 링크 또는 아이디를 먼저 입력해주세요!");
       return;
     }
     
@@ -112,14 +110,12 @@ function App() {
       username = splitUrl.split("/")[0];
     }
 
+				const loadingToast = toast.loading(`${username}님의 데이터를 가져오는 중...`);
+
     try {
-      alert(`--- [${username}]님의 GitHub 전체 데이터를 호출합니다 ---`);
       let repos = []; // 전체 레포지토리를 담을 빈 바구니
       let page = 1;
       let keepFetching = true; // 데이터를 계속 가져올지 결정하는 플래그
-
-      // 사용자에게 로딩 중임을 알려줍니다.
-      alert(`${username}님의 전체 프로젝트 데이터를 불러오는 중입니다. 프로젝트가 많은 경우 수 초가 걸릴 수 있습니다...`);
 
       // 데이터를 다 가져올 때까지 반복합니다.
       while (keepFetching) {
@@ -142,7 +138,7 @@ function App() {
       }
 
       if (repos.length === 0) {
-        alert("공개된 레포지토리가 없습니다.");
+        toast.error("공개된 레포지토리가 없습니다.", { id: loadingToast });
         return;
       }
 
@@ -167,10 +163,10 @@ function App() {
         projects: fetchedProjects //	기존 프로젝트와 합칩니다. (원하는 경우 기존 프로젝트를 제거할 수도 있습니다)
       }));
 
-      alert(`GitHub 연동 성공[${username}]님의 전체 프로젝트 ${fetchedProjects.length}개를 모두 가져왔습니다.`);
+						toast.success(`연동 성공 ${repos.length}개의 프로젝트를 가져왔습니다.`, { id: loadingToast });
     } catch (error) {
       console.error("GitHub 연동 에러:", error);
-      alert(`GitHub 데이터를 불러오는 데 실패했습니다. 아이디가 [${username}]이 맞는지 확인해주세요. API 호출 제한일 수도 있습니다.`);
+      toast.error("데이터를 불러오지 못했습니다. 아이디를 확인해주세요.", { id: loadingToast });
     }
   };
 
@@ -186,45 +182,76 @@ function App() {
       ...formData,
       projects: [...formData.projects, { id: `manual-${Date.now()}`, name: "", description: "", role: "", techStack: "", period: "" }]
     });
+				toast.success("새 프로젝트 블록이 추가되었습니다.");
   };
 
   const removeProject = (index) => {
     const newProjects = formData.projects.filter((_, i) => i !== index);
     setFormData({ ...formData, projects: newProjects });
+				toast("항목이 삭제되었습니다.", { icon: '🗑️'});
   };
 
 		const handleDragEnd = (result) => {
 			if	(!result.destination) return; // 드롭 위치가 유효하지 않으면 무시
-
 			const items = Array.from(formData.projects);
 			const [reorderedItem] = items.splice(result.source.index, 1); // 드래그한 아이템 제거
 			items.splice(result.destination.index, 0, reorderedItem); // 드롭 위치에 아이템 삽입
-
 			setFormData({ ...formData, projects: items }); // 상태 업데이트
 		};
 
   const downloadPDF = () => {
-    window.print();
+			toast.success("PDF 출력을 시작합니다");
+  setTimeout(() => window.print(), 1000);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+		const handleSubmit = (e) => {
+			e.preventDefault();
+
+			const currentSubdomain = formData.subdomain.trim().toLowerCase();
+			const forbiddenSubdomains = ['www', 'api', 'admin', 'root', 'localhost', 'dev', 'test', 'master', 'main'];
+			if (!currentSubdomain) {
+				toast.error("서브도메인을 입력해주세요");
+				return; 
+			}
+			if (forbiddenSubdomains.includes(currentSubdomain)) {
+				toast.error(`'${currentSubdomain}'은(는) 사용할 수 없는 단어입니다.`);
+				return;
+			}
+			const savingToast = toast.loading("데이터 저장 중...");
+
     fetch("http://localhost:5000/api/save-resume", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
     })
       .then((res) => res.json())
-      .then((data) => alert(data.message))
+      .then((data) => {
+							toast.success("성공적으로 저장 및 퍼블리싱 되었습니다.", { id: savingToast });
+						})
 						// 저장 성공 시 로컬스토리지 비우기 (서브도메인 모드에서는 DB에서 불러온 데이터가 최신이므로 저장하지 않음)
       // localStorage.removeItem("oneresume-draft");
-      .catch((err) => console.error("에러:", err));
-  };
+      .catch((err) => { 
+							console.error("에러:", err);
+							toast.error("저장 중 오류가 발생했습니다.", { id: savingToast });
+  });
+	};
 
   if (loading) return <div className="text-center py-20">데이터를 불러오는 중...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4">
+			<div className="min-h-screen bg-slate-50 py-12 px-4 font-sans">
+				<Toaster
+				position="top-center"
+				reverseOrder={false}
+				toastOptions={{
+					style: {
+						borderRadius: '12px',
+						background: isDarkMode ? '#1e293b' : '#fff',
+						color: isDarkMode ? '#f8fafc' : '#1e293b',
+					},
+				}}
+				/>
+				
       <header className="text-center mb-12 relative print:hidden">
         <h1 className="text-4xl font-black text-slate-800 mb-2">OneResume</h1>
         <p className="text-slate-500 font-medium text-lg">
