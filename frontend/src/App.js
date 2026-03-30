@@ -208,8 +208,17 @@ function App() {
 			e.preventDefault();
 
 			const currentSubdomain = formData.subdomain.trim().toLowerCase();
-			const forbiddenSubdomains = ['www', 'api', 'admin', 'root', 'localhost', 'dev', 'test', 'master', 'main'];
 			if (!currentSubdomain) {
+				toast.error("서브도메인을 입력해주세요");
+				return;
+			}
+			const isValidFormat = /^[a-z0-9]+$/.test(currentSubdomain);
+			if (!isValidFormat) {
+				toast.error("서브도메인은 영문 소문자와 숫자만 사용할 수 있습니다.");
+				return;
+			}
+			const forbiddenSubdomains = ['www', 'api', 'admin', 'root', 'localhost', 'dev', 'test', 'master', 'main'];
+			if (forbiddenSubdomains.includes(currentSubdomain)) {
 				toast.error("서브도메인을 입력해주세요");
 				return; 
 			}
@@ -245,9 +254,14 @@ function App() {
 				reverseOrder={false}
 				toastOptions={{
 					style: {
-						borderRadius: '12px',
-						background: isDarkMode ? '#1e293b' : '#fff',
+						borderRadius: '16px', // 모서리를 조금 더 부드럽게
+      padding: '16px 24px', // 내부 여백을 넓혀서 키움
+      fontSize: '1.1rem',   // 글자 크기를 키움
+      maxWidth: '500px',    // 알림창 가로 최대 길이 확장
+      fontWeight: '600',    // 글씨를 살짝 굵게 처리
+						background: isDarkMode ? '#1e293b' : '#ffffff',
 						color: isDarkMode ? '#f8fafc' : '#1e293b',
+						boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
 					},
 				}}
 				/>
