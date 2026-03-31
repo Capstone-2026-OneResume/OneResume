@@ -45,6 +45,18 @@ const theme = {
     >
       {/* 헤더 */}
       <div className={`border-b-2 pb-6 mb-8 text-center transition-colors duration-500 ${theme.divider}`}>
+
+							{ /* 프로필 사진 렌더링 영역 추가 */ }
+							{formData.profileImageUrl && (
+								<div className="flex justify-center mb-6">
+								<img
+								src={formData.profileImageUrl}
+								alt="프로필"
+								className="w-36 h-36 rounded-full object-cover border-4 border-slate-200 shadow-md"
+								/>
+								</div>
+							)}
+
         <h2 className={`text-4xl font-black mb-2 transition-colors duration-500 ${theme.name}`}>
           {formData.username || "이름 없음"}
         </h2>

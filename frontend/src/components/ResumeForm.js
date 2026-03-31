@@ -9,11 +9,36 @@ const ResumeForm = ({
   removeProject,
   handleSubmit,
   handleGithubSync,
-  handleDragEnd 
+  handleDragEnd,
+		handleImageUpload
 }) => {
   return (
     <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-2xl border border-slate-100 print:hidden">
       <h2 className="text-2xl font-bold mb-6 text-slate-800">이력서 정보 입력</h2>
+
+						{/* 프로필 사진 업로드 영역 */ }
+						<div className="flex flex-col items-center mb-8">
+							<div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-100 shadow-md flex items-center justify-center mb-4 bg-slate-50">
+								{formData.profileImageUrl ? (
+									<img
+									src={formData.profileImageUrl}
+									alt="프로필 미리보기"
+									className="w-full h-full object-cover"
+									/>
+								) : (
+									<span className="text-slate-400 text-sm font-medium">사진 없음</span>
+								)}
+							</div>
+							<label className="cursor-pointer bg-slate-800 hover:bg-slate-900 transition-colors text-white px-5 py-2 rounded-full shadow-sm text-sm font-semibold active:scale-95">
+								프로필 사진 선택
+								<input
+									type="file"
+									accept="image/png, image/jpeg, image/jpg"
+									className="hidden"
+									onChange={handleImageUpload}
+								/>
+							</label>
+						</div>
 
       {/* 기본 정보 영역 */}
       <div className="space-y-4 mb-8">

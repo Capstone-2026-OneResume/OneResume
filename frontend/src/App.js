@@ -7,17 +7,18 @@ import toast, { Toaster } from "react-hot-toast";
 
 function App() {
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    subdomain: "",
-    bio: "",
-    githubUrl: "",
-    blogUrl: "",
-    resumeTitle: "개발자 이력서",
-    school: "",
-    major: "",
-    gpa: "",
-    skills: "",
+    username: "", //	사용자 이름
+    email: "", //	이메일 필드 추가
+    subdomain: "", //	서브도메인 추가
+				profileImageUrl:	"", //	프로필 이미지 URL 추가
+    bio: "", //	자기소개 필드 추가
+    githubUrl: "", //	GitHub URL 필드 추가
+    blogUrl: "", //	블로그 URL 필드 추가
+    resumeTitle: "개발자 이력서", //	이력서 제목 필드 추가
+    school: "", //	학교명
+    major: "", //	전공
+    gpa: "", //	학점
+    skills: "", //	기술 스택
     projects: [
       { id: "init-1", name: "", description: "", role: "", techStack: "", period: "" } //	초기 프로젝트 하나는 빈 값으로 시작 (사용자가 추가하기 전까지는 빈 프로젝트로 유지)
     ],
@@ -95,6 +96,41 @@ function App() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+		const handleImageUpload = async (e) => {
+				const file = e.target.files[0];
+				if (!file) return;
+
+				if (file.size > 5 * 1024 * 1024) { // 5MB 제한
+					toast.error("파일 크기는 5MB를 초과할 수 없습니다.");
+					return;
+				}
+
+				const uploadToast = toast.loading("이미지를 업로드하는 중입니다...");
+				const uploadData = new FormData();
+				uploadData.append("profileImage", file);
+				
+				try {
+const response = await fetch("http://localhost:5000/api/upload", {
+        method: "POST",
+        body: uploadData, 
+      });
+      
+      const data = await response.json();
+
+      if (response.ok) {
+        setFormData({ ...formData, profileImageUrl: data.imageUrl });
+        toast.success("프로필 사진이 성공적으로 등록되었습니다", { id: uploadToast });
+      } else {
+        toast.error(data.message || "업로드에 실패했습니다.", { id: uploadToast });
+      }
+    } catch (error) {
+      console.error("업로드 에러:", error);
+      toast.error("서버와 통신 중 에러가 발생했습니다.", { id: uploadToast });
+    } finally {
+      e.target.value = null; // 똑같은 사진 다시 올릴 수 있게 인풋 초기화
+    }
   };
 
   const handleGithubSync = async () => {
@@ -306,6 +342,7 @@ function App() {
             handleSubmit={handleSubmit}
             handleGithubSync={handleGithubSync}
 												handleDragEnd={handleDragEnd}
+												handleImageUpload={handleImageUpload}
           />
         )}
         <div className={isSubdomainMode ? "mx-auto" : ""}>
