@@ -1,6 +1,10 @@
-const { PrismaClient } = require('@prisma/client');
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const { PrismaClient } = require('@prisma/client');
+const { S3Client } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
 
 // Prisma Client 초기화 (Prisma 7에서는 별도 설정 없이도 config.ts를 참조합니다)
 const prisma = new PrismaClient({
@@ -14,12 +18,69 @@ const port = 5000;
 app.use(cors()); 
 app.use(express.json());
 
-// 1. 서버 상태 확인용 루트 경로
-app.get('/', (req, res) => {
-  res.send('OneResume 백엔드 서버가 아주 잘 돌아가고 있습니다! 🚀');
+// S3 클라이언트 설정
+const s3 = new S3Client({
+	region: process.env.AWS_REGION,
+	credentials: {
+		accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+		secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+	},
 });
 
-// 2. 이력서 저장 API (DB 연동 완료)
+// Multer-S3 미들웨어 설정 (프로필 이미지 업로드용)
+const upload = multer({
+	storage: multerS3({
+		s3: s3,
+		bucket: process.env.S3_BUCKET_NAME,
+		acl: 'public-read', //누구나 이미지를 볼 수 있게 설정
+		contentType: multerS3.AUTO_CONTENT_TYPE, // 브라우저 다운로드 방지
+		key: function (req, file, cb) {
+			//파일 이름 중복 방지: 시간_원래이름 (한글 깨짐 방지 처리)
+			const encodedName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+			cb(null, `profiles/${Date.now()}_${encodedName}`);
+		},
+	}),
+	limits: { fileSize: 5 * 1024 * 1024 }, // 해커 방어. 최대 5MB 제한
+});
+
+// 프로필 이미지 S3 업로드 API
+app.post('/api/upload', upload.single('profileImage'), (req, res) => {
+	try {
+		if (!req.file) {
+			return res.status(400).json({ message: "파일이 업로드되지 않았습니다." });
+		}
+		console.log("✅ 이미지 S3 업로드 성공:", req.file.location);
+		res.status(200).json({ imageUrl: req.file.location });
+	} catch (error) {
+		console.error("이미지 업로드 에러:", error);
+		res.status(500).json({ message: "이미지 업로드 중 서버 오류가 발생했습니다." });
+	}
+});
+
+// 서브도메인으로 사용자 데이터 조회 API
+app.get('/api/user/:subdomain', async (req, res) => {
+	try {
+		const { subdomain } = req.params;
+		const user = await prisma.user.findUnique({
+			where: { subdomain },
+			include: {
+				resumes: {
+					include: { projects: true }
+				}
+			}
+		});
+
+		if (!user) {
+			return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+		}
+		res.status(200).json(user);
+	} catch (error) {
+		console.error("데이터 로드 에러:", error);
+		res.status(500).json({ message: "데이터를 불러오는 중 서버 오류가 발생했습니다." });
+	}
+});
+
+// 이력서 저장 API (DB 연동 완료)
 app.post('/api/save-resume', async (req, res) => {
   try {
     // 프론트엔드에서 보낸 데이터 구조 분해 할당
@@ -46,7 +107,7 @@ app.post('/api/save-resume', async (req, res) => {
     const educationArr = [school, major, gpa].filter(Boolean);
     const educationString = educationArr.length > 0 ? educationArr.join(" | ") : null;
 
-    // 3) 프로젝트 배열에서 이름이나 설명이 있는 '유효한' 프로젝트만 필터링
+    // 4) 프로젝트 배열에서 이름이나 설명이 있는 '유효한' 프로젝트만 필터링
     const validProjects = Array.isArray(projects) 
       ? projects.filter(p => p.name || p.description).map(p => ({
           name: p.name || "",
@@ -59,7 +120,7 @@ app.post('/api/save-resume', async (req, res) => {
 
     console.log(`--- [${username}]님의 데이터 저장 시작 ---`);
 
-    // 4) User 데이터 저장 (upsert: 이메일 기준. 있으면 수정, 없으면 생성)
+    // 5) User 데이터 저장 (upsert: 이메일 기준. 있으면 수정, 없으면 생성)
     const user = await prisma.user.upsert({
       where: { email: email },
       update: {
@@ -80,7 +141,7 @@ app.post('/api/save-resume', async (req, res) => {
       }
     });
 
-    // 5) 해당 유저의 기존 이력서가 있는지 확인
+    // 6) 해당 유저의 기존 이력서가 있는지 확인
     const existingResume = await prisma.resume.findFirst({
       where: { userId: user.id }
     });
@@ -128,31 +189,6 @@ app.post('/api/save-resume', async (req, res) => {
     }
 
     res.status(500).json({ message: "서버 저장 중 오류가 발생했습니다." });
-  }
-});
-
-// 3. 서브도메인 기반 유저 데이터 조회 API (핵심!)
-app.get('/api/user/:subdomain', async (req, res) => {
-  const { subdomain } = req.params;
-
-  try {
-    const userData = await prisma.user.findUnique({
-      where: { subdomain: subdomain },
-      include: {
-        resumes: {
-          include: { projects: true }
-        }
-      }
-    });
-
-    if (!userData) {
-      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
-    }
-
-    res.json(userData);
-  } catch (error) {
-    console.error('사용자 조회 중 오류 발생:', error);
-    res.status(500).json({ message: 'DB 조회 실패', error: error.message });
   }
 });
 
