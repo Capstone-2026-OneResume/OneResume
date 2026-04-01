@@ -5,6 +5,7 @@ const { PrismaClient } = require('@prisma/client');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const bcrypt	= require('bcrypt');
+const nodemailer = require('nodemailer');
 
 // Prisma Client 초기화 (Prisma 7에서는 별도 설정 없이도 config.ts를 참조합니다)
 const prisma = new PrismaClient({
@@ -15,7 +16,7 @@ const app = express();
 const port = 5000;
 
 // 미들웨어 설정
-app.use(cors()); 
+app.use(cors());
 app.use(express.json());
 
 // S3 클라이언트 설정
@@ -33,6 +34,105 @@ console.log("타겟 S3 버킷 이름:", process.env.S3_BUCKET_NAME);
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB 용량 제한
+});
+
+// 메일 전송을 위한 Nodemailer 설정
+const transporter = nodemailer.createTransport({
+		service: 'gmail',
+		auth: {
+			user: process.env.EMAIL_USER, //	이메일 주소
+			pass: process.env.EMAIL_PASS, //	앱 비밀번호 (2FA 설정된 계정의 경우)
+		},
+	});
+
+	// 임시 인증 데이터 저장소 (서버 메모리 사용)
+	// 유저가 인증에 성공했는지 잠시 기억해두는 장부.
+	const verificationStore = new Map();
+
+	// 인증번호 발송
+app.post('/api/auth/send-code', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "이메일을 입력해주세요." });
+
+    // 6자리 랜덤 숫자 생성
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // 장부에 '미인증' 상태로 저장 (5분 뒤 만료 등으로 확장 가능)
+    verificationStore.set(email, { code, isVerified: false });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: '[OneResume] 회원가입 인증번호입니다.',
+      text: `안녕하세요! OneResume입니다. 인증번호 6자리는 [${code}] 입니다.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`📧 [메일발송 성공] ${email} : ${code}`);
+    res.status(200).json({ message: "인증번호가 발송되었습니다." });
+  } catch (error) {
+    console.error("메일 발송 에러:", error);
+    res.status(500).json({ message: "메일 발송 중 서버 오류가 발생했습니다." });
+  }
+});
+
+// 인증번호 검증
+app.post('/api/auth/verify-code', async (req, res) => {
+  const { email, code } = req.body;
+  const storedData = verificationStore.get(email);
+
+  if (storedData && storedData.code === code) {
+    // 번호가 맞으면 장부에 '인증 완료'라고 표시
+    verificationStore.set(email, { ...storedData, isVerified: true });
+    return res.status(200).json({ message: "이메일 인증에 성공했습니다!" });
+  }
+
+  res.status(400).json({ message: "인증번호가 틀렸거나 만료되었습니다." });
+});
+
+// 최종 회원가입 (비밀번호 암호화 저장)
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { email, password, subdomain } = req.body;
+
+    // 장부에서 이 사람이 인증을 마쳤는지 확인
+    const storedData = verificationStore.get(email);
+    if (!storedData || !storedData.isVerified) {
+      return res.status(400).json({ message: "이메일 인증을 먼저 완료해주세요." });
+    }
+
+    // 중복 체크
+    const existingUser = await prisma.user.findFirst({
+      where: { OR: [{ email }, { subdomain }] }
+    });
+    if (existingUser) {
+      return res.status(409).json({ message: "이미 사용 중인 이메일 또는 도메인입니다." });
+    }
+
+    // 비밀번호 암호화
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // DB 저장
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        subdomain,
+        isVerified: true,
+        provider: "LOCAL"
+      }
+    });
+
+    // 가입 완료 후 임시 장부에서 삭제
+    verificationStore.delete(email);
+
+    console.log(`✅ [가입완료] ${email}`);
+    res.status(201).json({ message: "OneResume 회원이 되신 것을 축하합니다!" });
+  } catch (error) {
+    console.error("가입 에러:", error);
+    res.status(500).json({ message: "가입 처리 중 오류가 발생했습니다." });
+  }
 });
 
 // 프로필 이미지 S3 직접 업로드 API (multer로 메모리에 저장된 파일을 AWS SDK로 직접 S3에 업로드)
@@ -70,56 +170,6 @@ app.post('/api/upload', upload.single('profileImage'), async (req, res) => {
   }
 });
 
-//	회원가입 API (DB 연동 완료)
-app.post ('/api/auth/signup', async (req, res) => {
-	try {
-		const { email, password, subdomain } = req.body;
-
-		//	필수 값 체크
-		if (!email || !password || !subdomain) {
-			return res.status(400).json({ message: "이메일, 비밀번호, 개인 도메인은 필수 입력 사항입니다." });
-		}
-
-		const existingUser = await prisma.user.findFirst({
-			where: {
-				OR: [{	email }, { subdomain }]
-			}
-		});
-
-		if (existingUser) {
-			if	(existingUser.email === email) {
-				return res.status(409).json({ message: "이미 사용 중인 이메일입니다." });
-			}
-			return res.status(409).json({ message: "이미 사용 중인 개인 도메인입니다." });
-		}
-
-		const hashedPassword = await bcrypt.hash(password, 10); //	비밀번호 해싱
-		const verificationToken = Math.floor(100000 + Math.random() * 900000).toString(); //	6자리 랜덤 토큰 생성
-
-		const newUser = await prisma.user.create({
-			data: {
-				email: email,
-				password: hashedPassword, //	해싱된 비밀번호 저장, 절대 원본 비밀번호 저장 금지!
-				subdomain: subdomain,
-				verificationToken: verificationToken, //	검증 토큰 저장
-				provider: "local", //	소셜 로그인과 구분하기 위한 필드
-			}
-		});
-
-		console.log(`✅ 회원가입 성공: ${email} (ID: ${verificationToken})`);
-		
-		// Todo: 이메일로 verificationToken 전송하는 로직 추가 예정 (현재는 DB에 토큰 저장만 함)
-		
-		res.status(201).json({ 
-			message: "회원가입이 성공적으로 완료되었습니다. 이메일 인증 후 로그인해주세요."
-		});
-
-	} catch (error) {
-		console.error("회원가입 에러:", error);
-		res.status(500).json({ message: "회원가입 중 서버 오류가 발생했습니다." });
-	}
-});
-
 // 서브도메인으로 사용자 데이터 조회 API
 app.get('/api/user/:subdomain', async (req, res) => {
 	try {
@@ -132,7 +182,6 @@ app.get('/api/user/:subdomain', async (req, res) => {
 				}
 			}
 		});
-
 		if (!user) {
 			return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 		}
