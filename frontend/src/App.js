@@ -2,10 +2,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import ResumeForm from "./components/ResumeForm";
 import ResumePreview from "./components/ResumePreview";
+import Signup from "./components/Signup";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
 function App() {
+
+		const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+
   const [formData, setFormData] = useState({
     username: "", //	사용자 이름
     email: "", //	이메일 필드 추가
@@ -46,10 +51,16 @@ function App() {
 					if (savedTheme) {
 						setIsDarkMode(savedTheme === "true");
 					}
+
+					//	서브도메인인 모드가 아니고 로그인이 안 되어 있다면 가입창 노출
+					if (!isLoggedIn) {
+						setShowSignup(true);
+					}
+
 					setIsSubdomainMode(false);
 					setLoading(false);
     }
-  }, []);
+  }, [isLoggedIn]); //	로그인 상태가 변경될 때마다 실행 (가입 성공 후 로그인 상태가 true로 바뀌면 서브도메인 모드 해제 및 가입창 닫힘)
 
 		useEffect(() => { //	사용자가 서브도메인 모드가 아닐 때만 로컬 스토리지에 데이터를 저장합니다. (서브도메인 모드에서는 DB에서 불러온 데이터가 최신이므로 저장하지 않음)
 			if (!isSubdomainMode && !loading) {
@@ -93,6 +104,13 @@ function App() {
       setLoading(false);
     }
   };
+
+		//	회원가입 성공 시 호출되는 함수 (App.js에서 Signup 컴포넌트로 전달)
+		const handleSignupSuccess = (data) => {
+			setFormData(prev => ({ ...prev, email: data.email, subdomain: data.subdomain }));
+			setIsLoggedIn(true); //	로그인 상태로 전환 (실제 로그인 기능이 구현되면 이 부분은 로그인 처리 로직으로 대체)
+			setShowSignup(false); //	가입창 닫기
+		};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -332,6 +350,11 @@ const response = await fetch("http://localhost:5000/api/upload", {
 								</div>
       </header>
 
+						{!isSubdomainMode && showSignup && !isLoggedIn ? (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Signup onSuccess={handleSignupSuccess} isDarkMode={isDarkMode} />
+        </div>
+      ) : (
       <div className={`max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-10 ${isSubdomainMode ? 'justify-center' : ''}`}>
         {!isSubdomainMode && (
           <ResumeForm
@@ -350,6 +373,7 @@ const response = await fetch("http://localhost:5000/api/upload", {
           <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} />
         </div>
       </div>
+						)}
     </div>
   );
 }

@@ -69,7 +69,7 @@ app.post('/api/auth/send-code', async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`📧 [메일발송 성공] ${email} : ${code}`);
+    console.log(`[메일발송 성공] ${email} : ${code}`);
     res.status(200).json({ message: "인증번호가 발송되었습니다." });
   } catch (error) {
     console.error("메일 발송 에러:", error);
@@ -113,12 +113,15 @@ app.post('/api/auth/signup', async (req, res) => {
     // 비밀번호 암호화
     const hashedPassword = await bcrypt.hash(password, 10);
 
+				const tempUsername = email.split('@')[0]; // 이메일 앞부분을 임시 사용자 이름으로 사용 (실제 서비스에서는 별도 입력 받는 것이 좋음)
+
     // DB 저장
     const newUser = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         subdomain,
+								username: tempUsername,
         isVerified: true,
         provider: "LOCAL"
       }
