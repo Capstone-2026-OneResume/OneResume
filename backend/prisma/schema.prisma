@@ -11,24 +11,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. 사용자 정보
+// 사용자 정보
 model User {
   id        			Int      @id @default(autoincrement())
-		username					String			@unique
+		username					String?		@unique
   email     			String   @unique
-  password  			String			// 나중에 로그인용.
+  password  			String?		
   subdomain 			String   @unique // 여기에 user-id.oneresume.com의 id가 들어감.
 		profileImage String? 	// 프로필 이미지 경로
 		bio										String? 	// 한 줄 소개
 		profileImageUrl String? // 프로필 사진
 		githubUrl				String?  // 깃허브 링크 
 		blogUrl						String?		// 블로그 링크
+
+// 이메일 인증 관련
+		isVerified			Boolean		@default(false) // 인증 완료 여부
+		verificationToken String? // 인증용 난수 토큰
+
+// 소셜 로그인(OAuth) 관련
+		provider		String			@default("LOCAL") // "LOCAL", "GITHUB", "GOOGLE" 등
+		socialId		String?		@unique		// 소셜 서비스에서 제공하는 고유 ID
+
   resumes   Resume[]
   createdAt DateTime @default(now()) // 이력서 생성일
   updatedAt DateTime @updatedAt // 이력서 최종 수정일
 }
 
-// 2. 이력서 기본 정보
+// 이력서 기본 정보
 model Resume {
   id        Int       @id @default(autoincrement())
   title     String    // 이력서 제목
@@ -42,7 +51,7 @@ model Resume {
   updatedAt DateTime  @updatedAt // 나중에 사용자가 이력서를 여러 개 만들었을 때, "가장 최근에 수정된 이력서"를 상단에 보여주려면 필수, 디버깅에 효율적임.
 }
 
-// 3. 프로젝트 경험
+// 프로젝트 경험
 model Project {
   id          Int     @id @default(autoincrement())
   name        String  // 프로젝트명
