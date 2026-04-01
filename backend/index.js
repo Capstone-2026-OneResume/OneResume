@@ -4,6 +4,7 @@ const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
+const bcrypt	= require('bcrypt');
 
 // Prisma Client 초기화 (Prisma 7에서는 별도 설정 없이도 config.ts를 참조합니다)
 const prisma = new PrismaClient({
@@ -67,6 +68,56 @@ app.post('/api/upload', upload.single('profileImage'), async (req, res) => {
     console.error("❌ S3 직접 업로드 에러:", error);
     res.status(500).json({ message: "S3 업로드 중 에러가 발생했습니다." });
   }
+});
+
+//	회원가입 API (DB 연동 완료)
+app.post ('/api/auth/signup', async (req, res) => {
+	try {
+		const { email, password, subdomain } = req.body;
+
+		//	필수 값 체크
+		if (!email || !password || !subdomain) {
+			return res.status(400).json({ message: "이메일, 비밀번호, 개인 도메인은 필수 입력 사항입니다." });
+		}
+
+		const existingUser = await prisma.user.findFirst({
+			where: {
+				OR: [{	email }, { subdomain }]
+			}
+		});
+
+		if (existingUser) {
+			if	(existingUser.email === email) {
+				return res.status(409).json({ message: "이미 사용 중인 이메일입니다." });
+			}
+			return res.status(409).json({ message: "이미 사용 중인 개인 도메인입니다." });
+		}
+
+		const hashedPassword = await bcrypt.hash(password, 10); //	비밀번호 해싱
+		const verificationToken = Math.floor(100000 + Math.random() * 900000).toString(); //	6자리 랜덤 토큰 생성
+
+		const newUser = await prisma.user.create({
+			data: {
+				email: email,
+				password: hashedPassword, //	해싱된 비밀번호 저장, 절대 원본 비밀번호 저장 금지!
+				subdomain: subdomain,
+				verificationToken: verificationToken, //	검증 토큰 저장
+				provider: "local", //	소셜 로그인과 구분하기 위한 필드
+			}
+		});
+
+		console.log(`✅ 회원가입 성공: ${email} (ID: ${verificationToken})`);
+		
+		// Todo: 이메일로 verificationToken 전송하는 로직 추가 예정 (현재는 DB에 토큰 저장만 함)
+		
+		res.status(201).json({ 
+			message: "회원가입이 성공적으로 완료되었습니다. 이메일 인증 후 로그인해주세요."
+		});
+
+	} catch (error) {
+		console.error("회원가입 에러:", error);
+		res.status(500).json({ message: "회원가입 중 서버 오류가 발생했습니다." });
+	}
 });
 
 // 서브도메인으로 사용자 데이터 조회 API
