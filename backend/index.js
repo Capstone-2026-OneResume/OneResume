@@ -154,7 +154,15 @@ app.post('/api/auth/login', async (req, res) => {
 	try {
 		const {email, password} = req.body;
 
-		const user = await prisma.user.findUnique({ where: { email } });
+		const user = await prisma.user.findUnique({
+			where: { email },
+			include: {
+				resumes: {
+					include: { projects: true }
+				}
+			}
+		});
+
 		if (!user) return res.status(401).json({ message: "존재하지 않는 계정입니다." });
 
 		const isMatch = await bcrypt.compare(password, user.password);
@@ -170,7 +178,7 @@ const token = jwt.sign(
 		res.status(200).json({
 	message: "로그인 성공!",
 	token,
-user: { email: user.email, subdomain: user.subdomain, username: user.username }
+	user: user
 });
 }	catch (error) {
 	console.error("로그인 에러:", error);
@@ -185,8 +193,15 @@ app.get('/api/auth/me', async (req, res) => {
 		const token = authHeader && authHeader.split(' ')[1];
 		if (!token) return res.status(401).json({ message: "토큰이 없습니다." });
 
-		const decoded = jwt.verify(token, process.env.JWT_SECRET);
-		const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+		const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+		const user = await prisma.user.findUnique({
+			where: { id: decoded.userId },
+		include: {
+			resumes: {
+				include: { projects: true }
+			}
+		} 
+	});
 
 		if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 

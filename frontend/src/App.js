@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ResumeForm from "./components/ResumeForm";
 import ResumePreview from "./components/ResumePreview";
 import Signup from "./components/Signup";
+import Login from "./components/Login";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -31,7 +32,31 @@ function App() {
 		const [isDarkMode, setIsDarkMode] = useState(false); //	다크 모드 상태 추가
 		const [isLoggedIn, setIsLoggedIn] = useState(false); // 로그인 상태
   const [showSignup, setShowSignup] = useState(false); // 회원가입창 노출 여부
+		const [authMode, setAuthMode] = useState('login');
   const resumeRef = useRef(); //	PDF 변환 시 참조할 이력서 미리보기 영역
+		const mapUserDataToFields = (user) => {
+			const resume = user.resumes?.[0] || {};
+			const eduParts = resume.education ? resume.education.split(" | ") : [];
+
+			return {
+						username: user.username || "",
+      email: user.email || "",
+      subdomain: user.subdomain || "",
+      bio: user.bio || "",
+      profileImageUrl: user.profileImageUrl || "",
+      githubUrl: user.githubUrl || "",
+      blogUrl: user.blogUrl || "",
+      resumeTitle: resume.title || "개발자 이력서",
+      school: eduParts[0] || "",
+      major: eduParts[1] || "",
+      gpa: eduParts[2] || "",
+      skills: resume.skills || "",
+      // 저장된 프로젝트가 있으면 불러오고, 없으면 빈 입력창 하나 노출
+      projects: resume.projects?.length > 0
+        ? resume.projects.map((p, i) => ({ ...p, id: `db-${p.id || i}` }))
+        : [{ id: "init-1", name: "", description: "", role: "", techStack: "", period: "" }],
+    };
+  };
 
   useEffect(() => {
 			const checkAuth = async () => {
@@ -56,13 +81,8 @@ function App() {
 						});
 
 						if (response.data.user) {
-							const user = response.data.user;
-							setFormData(prev => ({
-								...prev,
-								email: user.email,
-								subdomain: user.subdomain,
-								username: user.username
-							}));
+							const loadedData = mapUserDataToFields(response.data.user);
+							setFormData(loadedData);
 							setIsLoggedIn(true);
 							setShowSignup(false); // 로그인 상태면 가입창 숨기기
 						}
@@ -88,20 +108,16 @@ function App() {
 			}, []);
 
 			// 가입/로그인 성공 시 호출되는 콜백
-			const handleSignupSuccess = (data) => {
+			const handleAuthSuccess = (data) => {
 				if (data.token) { //	백엔드에서 발급한 토큰이 있다면
 					localStorage.setItem("oneresume-token", data.token); // 토큰 저장
 				}
 
-				setFormData(prev => ({
-					...prev,
-					email: data.user.email,
-					subdomain: data.user.subdomain,
-					username: data.user.username
-				}));
+				const loadedData = mapUserDataToFields(data.user);
+				setFormData(loadedData);
+				
 				setIsLoggedIn(true); // 로그인 상태로 전환
 				setShowSignup(false); // 가입창 닫기
-				toast.success(`${data.user.username}님, 환영합니다`);
 			};
 
 			// 로그아웃 (테스트용으로 해더 등에 붙이세요)
@@ -109,6 +125,7 @@ function App() {
 				localStorage.removeItem("oneresume-token");
 				setIsLoggedIn(false);
 				setShowSignup(true);
+				setAuthMode('login');
 				toast.success("로그아웃 되었습니다.");
 			};
 
@@ -297,7 +314,6 @@ const response = await fetch("http://localhost:5000/api/upload", {
 
 		const handleSubmit = (e) => {
 			e.preventDefault();
-
 			const currentSubdomain = formData.subdomain.trim().toLowerCase();
 			if (!currentSubdomain) {
 				toast.error("서브도메인을 입력해주세요");
@@ -383,14 +399,33 @@ const response = await fetch("http://localhost:5000/api/upload", {
         >
           <span>PDF로 내보내기</span>
         </button>
-								</div>
-      </header>
+
+						{ /* 로그아웃 버튼 */}
+						{isLoggedIn && (
+							<button onClick={handleLogout} className="bg-red-500 text-white font-bold py-2 px-6 rounded-full shadow-lg">
+								로그아웃
+							</button>
+						)}
+				</div>
+  </header>
 
 						{!isSubdomainMode && showSignup && !isLoggedIn ? (
         <div className="flex items-center justify-center min-h-[50vh]">
-          <Signup onSuccess={handleSignupSuccess} isDarkMode={isDarkMode} />
-        </div>
+          {authMode === 'login' ? (
+											<Login
+											onSuccess={handleAuthSuccess}
+											onSwitch={() => setAuthMode('signup')}
+											isDarkMode={isDarkMode}
+											/>
       ) : (
+							<Signup
+							onSuccess={handleAuthSuccess}
+							onSwitch={() => setAuthMode('login')}
+							isDarkMode={isDarkMode}
+							/>
+						)}
+						</div>
+						) : (
       <div className={`max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-10 ${isSubdomainMode ? 'justify-center' : ''}`}>
         {!isSubdomainMode && (
           <ResumeForm
