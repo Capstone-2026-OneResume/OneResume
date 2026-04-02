@@ -8,9 +8,6 @@ import toast, { Toaster } from "react-hot-toast";
 
 function App() {
 
-		const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
-
   const [formData, setFormData] = useState({
     username: "", //	사용자 이름
     email: "", //	이메일 필드 추가
@@ -32,42 +29,88 @@ function App() {
   const [isSubdomainMode, setIsSubdomainMode] = useState(false);
   const [loading, setLoading] = useState(true);
 		const [isDarkMode, setIsDarkMode] = useState(false); //	다크 모드 상태 추가
+		const [isLoggedIn, setIsLoggedIn] = useState(false); // 로그인 상태
+  const [showSignup, setShowSignup] = useState(false); // 회원가입창 노출 여부
   const resumeRef = useRef(); //	PDF 변환 시 참조할 이력서 미리보기 영역
 
   useEffect(() => {
+			const checkAuth = async () => {
+				const token = localStorage.getItem("oneresume-token"); // 브라우저에서 토큰 꺼내기
     const host = window.location.hostname;
     const parts = host.split('.');
     const subdomain = (parts.length > 1 && parts[0] !== 'www' && parts[0] !== 'localhost') ? parts[0] : null;
 
+				// 만약 서브도메인 모드라면 (누가 내 이력서를 보러 온 거라면)
     if (subdomain) {
-      fetchUserData(subdomain);
+      await fetchUserData(subdomain); // 해당 서브도메인으로 사용자 데이터 불러오기
+						setLoading(false);
+						return;
+				}
+
+				// 관리자 모드(localhost)라면 로그인 체크
+				if (token) {
+					try {
+						// 벡엔드에 토큰 보내서 유저 정보 가져오기
+						const response = await axios.get("http://localhost:5000/api/auth/me", {
+							headers: { Authorization: `Bearer ${token}` }
+						});
+
+						if (response.data.user) {
+							const user = response.data.user;
+							setFormData(prev => ({
+								...prev,
+								email: user.email,
+								subdomain: user.subdomain,
+								username: user.username
+							}));
+							setIsLoggedIn(true);
+							setShowSignup(false); // 로그인 상태면 가입창 숨기기
+						}
+					} catch (error) {
+						console.error("세션 만료:", error);
+						localStorage.removeItem("oneresume-token"); //	유효하지 않은 토큰은 제거
+						setIsLoggedIn(false);
+						setShowSignup(true); // 로그인 실패 시 가입창 노출
+						}
     } else {
-					//	서브도메인이 없을 때는 로컬 스토리지에서 임시 데이터와 테마 설정을 불러옵니다.
-					const savedData = localStorage.getItem("oneresume-draft");
-					const savedTheme = localStorage.getItem("oneresume-theme");
-					if (savedData) {
-						setFormData(JSON.parse(savedData));
-					}
-					if (savedTheme) {
-						setIsDarkMode(savedTheme === "true");
-					}
+					setIsLoggedIn(false);
+					setShowSignup(true); // 토큰이 없으면 가입창 노출
+				}
 
-					//	서브도메인인 모드가 아니고 로그인이 안 되어 있다면 가입창 노출
-					if (!isLoggedIn) {
-						setShowSignup(true);
-					}
+				// 테마 설정 불러오기
+				const savedTheme = localStorage.getItem("oneresume-theme");
+				if (savedTheme) setIsDarkMode(savedTheme === "true");
 
-					setIsSubdomainMode(false);
-					setLoading(false);
-    }
-  }, [isLoggedIn]); //	로그인 상태가 변경될 때마다 실행 (가입 성공 후 로그인 상태가 true로 바뀌면 서브도메인 모드 해제 및 가입창 닫힘)
+				setLoading(false);
+			};
 
-		useEffect(() => { //	사용자가 서브도메인 모드가 아닐 때만 로컬 스토리지에 데이터를 저장합니다. (서브도메인 모드에서는 DB에서 불러온 데이터가 최신이므로 저장하지 않음)
-			if (!isSubdomainMode && !loading) {
-				localStorage.setItem("oneresume-draft", JSON.stringify(formData));
-				localStorage.setItem("oneresume-theme", isDarkMode.toString());
-			}
-		}, [formData, isDarkMode, isSubdomainMode, loading]);
+				checkAuth();
+			}, []);
+
+			// 가입/로그인 성공 시 호출되는 콜백
+			const handleSignupSuccess = (data) => {
+				if (data.token) { //	백엔드에서 발급한 토큰이 있다면
+					localStorage.setItem("oneresume-token", data.token); // 토큰 저장
+				}
+
+				setFormData(prev => ({
+					...prev,
+					email: data.user.email,
+					subdomain: data.user.subdomain,
+					username: data.user.username
+				}));
+				setIsLoggedIn(true); // 로그인 상태로 전환
+				setShowSignup(false); // 가입창 닫기
+				toast.success(`${data.user.username}님, 환영합니다`);
+			};
+
+			// 로그아웃 (테스트용으로 해더 등에 붙이세요)
+			const handleLogout = () => {
+				localStorage.removeItem("oneresume-token");
+				setIsLoggedIn(false);
+				setShowSignup(true);
+				toast.success("로그아웃 되었습니다.");
+			};
 
   const fetchUserData = async (subdomain) => {
     try {
@@ -104,13 +147,6 @@ function App() {
       setLoading(false);
     }
   };
-
-		//	회원가입 성공 시 호출되는 함수 (App.js에서 Signup 컴포넌트로 전달)
-		const handleSignupSuccess = (data) => {
-			setFormData(prev => ({ ...prev, email: data.email, subdomain: data.subdomain }));
-			setIsLoggedIn(true); //	로그인 상태로 전환 (실제 로그인 기능이 구현되면 이 부분은 로그인 처리 로직으로 대체)
-			setShowSignup(false); //	가입창 닫기
-		};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -351,7 +387,7 @@ const response = await fetch("http://localhost:5000/api/upload", {
       </header>
 
 						{!isSubdomainMode && showSignup && !isLoggedIn ? (
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex items-center justify-center min-h-[50vh]">
           <Signup onSuccess={handleSignupSuccess} isDarkMode={isDarkMode} />
         </div>
       ) : (
