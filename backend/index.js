@@ -6,6 +6,7 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const bcrypt	= require('bcrypt');
 const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
 
 // Prisma Client 초기화 (Prisma 7에서는 별도 설정 없이도 config.ts를 참조합니다)
 const prisma = new PrismaClient({
@@ -130,12 +131,72 @@ app.post('/api/auth/signup', async (req, res) => {
     // 가입 완료 후 임시 장부에서 삭제
     verificationStore.delete(email);
 
+				// 가입 즉시 로그인이 되도록 토큰 발급
+				const token = jwt.sign(
+						{ userId: newUser.id, email: newUser.email },
+						process.env.JWT_SECRET,
+						{ expiresIn: '1d' }
+				);
+
     console.log(`✅ [가입완료] ${email}`);
-    res.status(201).json({ message: "OneResume 회원이 되신 것을 축하합니다!" });
+    res.status(201).json({ message: "OneResume 회원이 되신 것을 축하합니다!", 
+					token,
+				user: { email: newUser.email, subdomain: newUser.subdomain, username: newUser.username }
+			});
   } catch (error) {
     console.error("가입 에러:", error);
     res.status(500).json({ message: "가입 처리 중 오류가 발생했습니다." });
   }
+});
+
+// 로그인 API (JWT 발급)
+app.post('/api/auth/login', async (req, res) => {
+	try {
+		const {email, password} = req.body;
+
+		const user = await prisma.user.findUnique({ where: { email } });
+		if (!user) return res.status(401).json({ message: "존재하지 않는 계정입니다." });
+
+		const isMatch = await bcrypt.compare(password, user.password);
+		if (!isMatch) return res.status(401).json({ message: "비밀번호가 틀렸습니다." });
+
+const token = jwt.sign(
+		{ userId: user.id, email: user.email },
+		process.env.JWT_SECRET,
+		{ expiresIn: '1d' }
+);
+
+		console.log(`✅ [로그인 성공] ${email}`);
+		res.status(200).json({
+	message: "로그인 성공!",
+	token,
+user: { email: user.email, subdomain: user.subdomain, username: user.username }
+});
+}	catch (error) {
+	console.error("로그인 에러:", error);
+	res.status(500).json({ message: "로그인 처리 중 오류가 발생했습니다." });
+}
+});
+
+// 내 정보 조회 API (JWT 인증 필요) (토큰 검증 및 새로고침 유지용)
+app.get('/api/auth/me', async (req, res) => {
+	try {
+		const authHeader = req.headers['authorization'];
+		const token = authHeader && authHeader.split(' ')[1];
+		if (!token) return res.status(401).json({ message: "토큰이 없습니다." });
+
+		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+		const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+
+		if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+		res.status(200).json({
+			user: { email: user.email, subdomain: user.subdomain, username: user.username }
+		});
+	} catch	(error) {
+		console.error("토큰 검증 에러:", error);
+		res.status(403).json({ message: "유효하지 않거나 만료된 토큰입니다." });
+	}
 });
 
 // 프로필 이미지 S3 직접 업로드 API (multer로 메모리에 저장된 파일을 AWS SDK로 직접 S3에 업로드)

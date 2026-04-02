@@ -36,9 +36,11 @@ const Signup = ({ onSuccess, isDarkMode }) => {
   const handleFinalSignup = async () => {
     const loading = toast.loading("회원가입 처리 중...");
     try {
-      await axios.post('http://localhost:5000/api/auth/signup', { email, password, subdomain });
+      const response = await axios.post('http://localhost:5000/api/auth/signup', { email, password, subdomain });
       toast.success("OneResume에 오신 걸 환영합니다", { id: loading });
-      onSuccess({ email, subdomain }); // 부모(App.js)로 가입 데이터 전달
+						if (onSuccess) {
+							onSuccess(response.data);
+						}
     } catch (err) {
       toast.error(err.response?.data?.message || "가입 중 오류 발생", { id: loading });
     }
