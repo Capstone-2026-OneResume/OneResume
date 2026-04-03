@@ -387,9 +387,9 @@ app.post('/api/save-resume', async (req, res) => {
 });
 
 // 서버 실행 및 데이터베이스 연결 확인
-app.listen(port, async () => {
+app.listen(port, '0.0.0.0',  async () => {
   console.log(`-----------------------------------------------`);
-  console.log(`서버 실행 중: http://localhost:${port}`);
+  console.log(`서버 실행 중: http://0.0.0.0:${port}`);
   
   try {
     // 명시적으로 연결 확인
