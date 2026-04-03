@@ -174,11 +174,12 @@ const token = jwt.sign(
 		{ expiresIn: '1d' }
 );
 
+		const { password: _, ...userWithoutPassword } = user;
 		console.log(`✅ [로그인 성공] ${email}`);
 		res.status(200).json({
 	message: "로그인 성공!",
 	token,
-	user: user
+	user: userWithoutPassword // 비밀번호 포함 없이 DB 데이터 전송
 });
 }	catch (error) {
 	console.error("로그인 에러:", error);
@@ -206,7 +207,16 @@ app.get('/api/auth/me', async (req, res) => {
 		if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 
 		res.status(200).json({
-			user: { email: user.email, subdomain: user.subdomain, username: user.username }
+			user: { 
+				email: user.email, 
+				subdomain: user.subdomain, 
+				username: user.username,
+				bio: user.bio,
+				profileImageUrl: user.profileImageUrl,
+				githubUrl: user.githubUrl,
+				blogUrl: user.blogUrl,
+				resumes: user.resumes
+			}
 		});
 	} catch	(error) {
 		console.error("토큰 검증 에러:", error);
@@ -265,7 +275,8 @@ app.get('/api/user/:subdomain', async (req, res) => {
 			return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 		}
 		console.log("DB에서 불러온 유저 정보:", user.username, user.profileImageUrl);
-		res.status(200).json(user);
+		const { password: _, ...safeUser } = user;
+		res.status(200).json(safeUser);
 	} catch (error) {
 		console.error("데이터 로드 에러:", error);
 		res.status(500).json({ message: "데이터를 불러오는 중 서버 오류가 발생했습니다." });

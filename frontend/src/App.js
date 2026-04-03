@@ -247,7 +247,7 @@ const response = await fetch("http://3.38.246.44:5000/api/upload", {
 
       // 3. 가져온 전체 데이터 매핑 (수정했던 null 방어막 유지)
       const fetchedProjects = repos.map((repo, index) => ({
-								id: `github-${repo.id || index}-{Date.now()}`, //	고유 ID (깃허브 ID + 타임스탬프)
+								id: `github-${repo.id || index}-${Date.now()}`, //	고유 ID (깃허브 ID + 타임스탬프)
         name: repo.name || "",
         description: repo.description || "GitHub에서 자동 연동된 프로젝트입니다.",
         role: "Developer",
