@@ -31,7 +31,6 @@ function App() {
   const [loading, setLoading] = useState(true);
 		const [isDarkMode, setIsDarkMode] = useState(false); //	다크 모드 상태 추가
 		const [isLoggedIn, setIsLoggedIn] = useState(false); // 로그인 상태
-  const [showSignup, setShowSignup] = useState(false); // 회원가입창 노출 여부
 		const [authMode, setAuthMode] = useState('login');
   const resumeRef = useRef(); //	PDF 변환 시 참조할 이력서 미리보기 영역
 		const mapUserDataToFields = (user) => {
@@ -84,17 +83,14 @@ function App() {
 							const loadedData = mapUserDataToFields(response.data.user);
 							setFormData(loadedData);
 							setIsLoggedIn(true);
-							setShowSignup(false); // 로그인 상태면 가입창 숨기기
 						}
 					} catch (error) {
 						console.error("세션 만료:", error);
 						localStorage.removeItem("oneresume-token"); //	유효하지 않은 토큰은 제거
 						setIsLoggedIn(false);
-						setShowSignup(true); // 로그인 실패 시 가입창 노출
 						}
     } else {
 					setIsLoggedIn(false);
-					setShowSignup(true); // 토큰이 없으면 가입창 노출
 				}
 
 				// 테마 설정 불러오기
@@ -117,14 +113,12 @@ function App() {
 				setFormData(loadedData);
 				
 				setIsLoggedIn(true); // 로그인 상태로 전환
-				setShowSignup(false); // 가입창 닫기
 			};
 
 			// 로그아웃 (테스트용으로 해더 등에 붙이세요)
 			const handleLogout = () => {
 				localStorage.removeItem("oneresume-token");
 				setIsLoggedIn(false);
-				setShowSignup(true);
 				setAuthMode('login');
 				toast.success("로그아웃 되었습니다.");
 			};
@@ -409,25 +403,14 @@ const response = await fetch("http://3.38.246.44:5000/api/upload", {
 				</div>
   </header>
 
-						{!isSubdomainMode && showSignup && !isLoggedIn ? (
-        <div className="flex items-center justify-center min-h-[50vh]">
-          {authMode === 'login' ? (
-											<Login
-											onSuccess={handleAuthSuccess}
-											onSwitch={() => setAuthMode('signup')}
-											isDarkMode={isDarkMode}
-											/>
-      ) : (
-							<Signup
-							onSuccess={handleAuthSuccess}
-							onSwitch={() => setAuthMode('login')}
-							isDarkMode={isDarkMode}
-							/>
-						)}
-						</div>
-						) : (
-      <div className={`max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-10 ${isSubdomainMode ? 'justify-center' : ''}`}>
-        {!isSubdomainMode && (
+{isSubdomainMode ? (
+        // 누군가의 이력서를 보러 온 모드 (서브도메인)
+        <div className="mx-auto">
+          <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} />
+        </div>
+      ) : isLoggedIn ? (
+        // 관리자 모드: 로그인 성공했을 때 (이력서 편집창)
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-10">
           <ResumeForm
             formData={formData}
             handleChange={handleChange}
@@ -436,15 +419,21 @@ const response = await fetch("http://3.38.246.44:5000/api/upload", {
             removeProject={removeProject}
             handleSubmit={handleSubmit}
             handleGithubSync={handleGithubSync}
-												handleDragEnd={handleDragEnd}
-												handleImageUpload={handleImageUpload}
+            handleDragEnd={handleDragEnd}
+            handleImageUpload={handleImageUpload}
           />
-        )}
-        <div className={isSubdomainMode ? "mx-auto" : ""}>
           <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} />
         </div>
-      </div>
-						)}
+      ) : (
+        // 관리자 모드: 로그인 안 했을 때 (로그인/회원가입창)
+        <div className="flex items-center justify-center min-h-[50vh]">
+          {authMode === 'login' ? (
+            <Login onSuccess={handleAuthSuccess} onSwitch={() => setAuthMode('signup')} isDarkMode={isDarkMode} />
+          ) : (
+            <Signup onSuccess={handleAuthSuccess} onSwitch={() => setAuthMode('login')} isDarkMode={isDarkMode} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
