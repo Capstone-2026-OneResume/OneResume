@@ -1,0 +1,53 @@
+name: OneResume CI/CD
+
+on:
+  push:
+    branches: [ "main" ] # 메인 브랜치에 코드가 올라오면 시작.
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 백엔드(EC2) 배포 단계
+      - name: Deploy Backend to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # 1. 프로젝트 폴더로 이동
+            cd ~/OneResume 
+            
+            # 2. 최신 코드 가져오기
+            git pull origin main
+            
+            # 3. 백엔드 설정 및 실행
+            cd backend
+            npm install
+            
+            # 금고(Secrets)에서 꺼내서 .env 파일 만들기
+            echo "DATABASE_URL=${{ secrets.DB_URL }}" > .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+            echo "AWS_REGION=ap-northeast-2" >> .env
+            echo "S3_BUCKET_NAME=oneresume-storage-parkungjung" >> .env 
+            
+            # Prisma 세팅 및 서버 재시작
+            npx prisma generate
+            pm2 reload all || pm2 start index.js --name "oneresume-api"
+
+      # 프론트엔드(S3) 배포 단계
+      - name: Build and Deploy Frontend to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd frontend
+          npm install
+          npm run build
+          aws s3 sync build/ s3://oneresume-storage-parkungjung --delete --region ap-northeast-2
