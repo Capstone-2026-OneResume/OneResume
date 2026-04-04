@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./config";
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -13,7 +14,7 @@ const Signup = ({ onSuccess, isDarkMode }) => {
   const handleSendCode = async () => {
     const loading = toast.loading("인증번호를 발송 중입니다...");
     try {
-      await axios.post('http://3.38.246.44:5000/api/auth/send-code', { email });
+      await axios.post(`${API_BASE_URL}/api/auth/send-code`, { email });
       toast.success("메일함을 확인해주세요", { id: loading });
       setStep(1);
     } catch (err) {
@@ -24,7 +25,7 @@ const Signup = ({ onSuccess, isDarkMode }) => {
   // 2. 인증번호 확인
   const handleVerifyCode = async () => {
     try {
-      await axios.post('http://3.38.246.44:5000/api/auth/verify-code', { email, code });
+      await axios.post(`${API_BASE_URL}/api/auth/verify-code`, { email, code });
       toast.success("인증되었습니다! 가입 정보를 입력하세요.");
       setStep(2);
     } catch (err) {
@@ -36,7 +37,7 @@ const Signup = ({ onSuccess, isDarkMode }) => {
   const handleFinalSignup = async () => {
     const loading = toast.loading("회원가입 처리 중...");
     try {
-      const response = await axios.post('http://3.38.246.44:5000/api/auth/signup', { email, password, subdomain });
+      const response = await axios.post(`${API_BASE_URL}/api/auth/signup`, { email, password, subdomain });
       toast.success("OneResume에 오신 걸 환영합니다", { id: loading });
 						if (onSuccess) {
 							onSuccess(response.data);

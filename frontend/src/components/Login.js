@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./config";
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -10,7 +11,7 @@ const Login = ({ onSuccess, onSwitch, isDarkMode }) => {
     e.preventDefault();
     const loading = toast.loading("로그인 중...");
     try {
-      const response = await axios.post('http://3.38.246.44:5000/api/auth/login', { email, password });
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
 						const { user } = response.data;
       toast.success(`${user.username}님, 반갑습니다`, { id: loading });
       
