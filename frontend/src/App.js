@@ -83,6 +83,11 @@ function App() {
 
 						if (response.data.user) {
 							const loadedData = mapUserDataToFields(response.data.user);
+							const savedImage = localStorage.getItem("oneresume-profile-image");
+							if(savedImage) {
+								loadedData.profileImageUrl = savedImage;
+							}
+
 							setFormData(loadedData);
 							setIsLoggedIn(true);
 						}
@@ -105,6 +110,21 @@ function App() {
 				checkAuth();
 			}, []);
 
+			useEffect(() => { //페이지 이탈( 새로고침/닫기 ) 방지 알림 로직 
+				const handleBeforeUnload = (e) => {
+					// 편집 모드(로그인 상태)이고, 누군가의 이력서를 보는 서브도메인 모드가 아닐 때만 작동
+					if (isLoggedIn && !isSubdomainMode) {
+						e.preventDefault();
+						e.returnValue = ""; // 브라우저 표준 경고창 유도
+					}
+				};
+
+				window.addEventListener("beforeunload", handleBeforeUnload);
+				return () => {
+					window.removeEventListener("beforeunload", handleBeforeUnload);
+				};
+			}, [isLoggedIn, isSubdomainMode]);
+
 			// 가입/로그인 성공 시 호출되는 콜백
 			const handleAuthSuccess = (data) => {
 				if (data.token) { //	백엔드에서 발급한 토큰이 있다면
@@ -113,7 +133,6 @@ function App() {
 
 				const loadedData = mapUserDataToFields(data.user);
 				setFormData(loadedData);
-				
 				setIsLoggedIn(true); // 로그인 상태로 전환
 			};
 
@@ -196,6 +215,7 @@ const response = await fetch(`${API_BASE_URL}/api/upload`, {
 
       if (response.ok) {
         setFormData({ ...formData, profileImageUrl: data.imageUrl });
+								localStorage.setItem("oneresume-profile-image", data.imageUrl);
         toast.success("프로필 사진이 성공적으로 등록되었습니다", { id: uploadToast });
       } else {
         toast.error(data.message || "업로드에 실패했습니다.", { id: uploadToast });
@@ -346,6 +366,7 @@ const response = await fetch(`${API_BASE_URL}/api/upload`, {
       .then((res) => res.json())
       .then((data) => {
 							toast.success("성공적으로 저장 및 퍼블리싱 되었습니다.", { id: savingToast });
+							localStorage.removeItem("oneresume-profile-image"); // DB저장이 끝났으니까 임시 사진 데이터 삭제.
 						})
 						// 저장 성공 시 로컬스토리지 비우기 (서브도메인 모드에서는 DB에서 불러온 데이터가 최신이므로 저장하지 않음)
       // localStorage.removeItem("oneresume-draft");
