@@ -125,6 +125,26 @@ function App() {
 				};
 			}, [isLoggedIn, isSubdomainMode]);
 
+			// 공유 링크 복사 함수
+			const copyShareLink = () => {
+				const currentSubdomain = formData.subdomain.trim();
+				if (!currentSubdomain) {
+					toast.error("서브도메인을 먼저 설정하고 저장해주세요");
+					return;
+				}
+				const host = window.location.hostname;
+				const protocol = window.location.protocol;
+				//로컬 환경이나 S3 환경에 맞춰 유동적으로 URL 생성
+				//나중에 정식 도메인 연결 시 `${protocol}//${currentSubdomain}.oneresume.com` 형태로 고정 가능
+				const shareUrl = `${protocol}//${currentSubdomain}.${host}`;
+				navigator.clipboard.writeText(shareUrl).then(() => {
+					toast.success("링크가 복사되었습니다");
+				}).catch((err) => {
+					console.error("복사 실패:", err);
+					toast.error("링크 복사에 실패했습니다.");
+				});
+			};
+
 			// 가입/로그인 성공 시 호출되는 콜백
 			const handleAuthSuccess = (data) => {
 				if (data.token) { //	백엔드에서 발급한 토큰이 있다면
@@ -415,6 +435,14 @@ const response = await fetch(`${API_BASE_URL}/api/upload`, {
             }`}
           >
 											{isDarkMode ? "☀️ 라이트 모드" : "🌙 다크 모드"}
+										</button>
+
+										{/* 링크 복사 버튼 */}
+										<button
+										onClick={copyShareLink}
+										className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2"
+										>
+											<span>링크 복사</span>
 										</button>
 
         <button
