@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./config";
+import { API_BASE_URL } from "../config";
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
