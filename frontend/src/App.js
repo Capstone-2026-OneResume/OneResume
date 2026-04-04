@@ -134,15 +134,38 @@ function App() {
 				}
 				const host = window.location.hostname;
 				const protocol = window.location.protocol;
-				//로컬 환경이나 S3 환경에 맞춰 유동적으로 URL 생성
-				//나중에 정식 도메인 연결 시 `${protocol}//${currentSubdomain}.oneresume.com` 형태로 고정 가능
+				// 로컬 환경이나 S3 환경에 맞춰 유동적으로 URL 생성
+				// 나중에 정식 도메인 연결 시 `${protocol}//${currentSubdomain}.oneresume.com` 형태로 고정 가능
 				const shareUrl = `${protocol}//${currentSubdomain}.${host}`;
-				navigator.clipboard.writeText(shareUrl).then(() => {
+				// 1순위: 가장 안전하고 현대적인 방식 (HTTPS 전용)
+				if (navigator.clipboard && window.isSecureContext) {
+					navigator.clipboard.writeText(shareUrl)
+					.then(() => toast.success("링크가 복사되었습니다"))
+					.catch(() => handleLegacyCopy(shareUrl));
+				} else {
+					// 2순위: 보안 연결이 아니거나 (S3 HTTP) 구형 브라우저일 때
+					handleLegacyCopy(shareUrl);
+				}
+			};
+
+			const handleLegacyCopy = (text) => {
+				try {
+					//화면 밖으로 치워버려서 사용자 눈에는 안 보이게 함. (브라우저를 속여서 강제로 복사 기능을 실행하는 마법" 같은 코드, 전통적인 편법이더라고)
+					const textArea = document.createElement("textarea"); // 유령 텍스트 상자 만들기
+					textArea.value = text;
+					textArea.style.position = "fixed";
+					textArea.style.left = "-9999px"; // 데이터 채우고 숨기기
+					textArea.style.top = "-9999px";
+					document.body.appendChild(textArea);
+					textArea.focus();
+					textArea.select(); // 강제 선택
+					document.execCommand('copy'); // 복사
+					document.body.removeChild(textArea); // 증거 인멸
 					toast.success("링크가 복사되었습니다");
-				}).catch((err) => {
+				} catch (err) {
 					console.error("복사 실패:", err);
 					toast.error("링크 복사에 실패했습니다.");
-				});
+				}
 			};
 
 			// 가입/로그인 성공 시 호출되는 콜백
