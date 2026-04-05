@@ -60,7 +60,7 @@ function App() {
 
 		const fetchUserData = useCallback(async (subdomain) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/user/${subdomain}`);
+      const response = await axios.get(`${API_BASE_URL}/api/resume/user/${subdomain}`);
       if (response.data) {
         setFormData(mapUserDataToFields(response.data));
         setIsSubdomainMode(true);
@@ -218,7 +218,7 @@ function App() {
 				uploadData.append("profileImage", file);
 				
 				try {
-const response = await fetch(`${API_BASE_URL}/api/upload`, {
+const response = await fetch(`${API_BASE_URL}/api/resume/upload`, {
         method: "POST",
         body: uploadData, 
       });
@@ -370,7 +370,7 @@ const response = await fetch(`${API_BASE_URL}/api/upload`, {
 			}
 			const savingToast = toast.loading("데이터 저장 중...");
 
-    fetch(`${API_BASE_URL}/api/save-resume`, {
+    fetch(`${API_BASE_URL}/api/resume/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
