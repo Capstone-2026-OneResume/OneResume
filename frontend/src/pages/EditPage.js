@@ -1,4 +1,3 @@
-// 이력서 편집 화면 (ResumeForm, ResumePreview를 포함)
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ResumeForm from "../components/ResumeForm";
@@ -13,6 +12,7 @@ function EditPage() {
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // 이력서 데이터 상태
   const [formData, setFormData] = useState({
     username: "", email: "", subdomain: "", profileImageUrl: "", bio: "",
     githubUrl: "", blogUrl: "", resumeTitle: "개발자 이력서", school: "",
@@ -20,6 +20,7 @@ function EditPage() {
     projects: [{ id: "init-1", name: "", description: "", role: "", techStack: "", period: "" }],
   });
 
+  // DB 데이터를 폼 데이터 구조로 매핑하는 함수
   const mapUserDataToFields = useCallback((user) => {
     const resume = user.resumes?.[0] || {};
     const eduParts = resume.education ? resume.education.split(" | ") : [];
@@ -42,6 +43,7 @@ function EditPage() {
     };
   }, []);
 
+  // 인증 확인 및 데이터 로드
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("oneresume-token");
@@ -58,6 +60,7 @@ function EditPage() {
 
         if (response.data.user) {
           const loadedData = mapUserDataToFields(response.data.user);
+          // 임시 등록 이미지 로드 (있다면)
           const savedImage = localStorage.getItem("oneresume-profile-image");
           if(savedImage) {
             loadedData.profileImageUrl = savedImage;
@@ -70,6 +73,7 @@ function EditPage() {
         navigate("/");
       }
 
+      // 저장된 테마 불러오기
       const savedTheme = localStorage.getItem("oneresume-theme");
       if (savedTheme) setIsDarkMode(savedTheme === "true");
       setLoading(false);
@@ -77,6 +81,7 @@ function EditPage() {
     checkAuth();
   }, [mapUserDataToFields, navigate]);
 
+  // 페이지 이탈 방지 경고
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       e.preventDefault();
@@ -86,6 +91,7 @@ function EditPage() {
     return () => { window.removeEventListener("beforeunload", handleBeforeUnload); };
   }, []);
 
+  // 복사 기능 함수 (legacy 지원 포함)
   const copyShareLink = () => {
     const currentSubdomain = formData.subdomain.trim();
     if (!currentSubdomain) {
@@ -136,11 +142,13 @@ function EditPage() {
     localStorage.setItem("oneresume-theme", newTheme.toString());
   };
 
+  // 폼 입력 변경 핸들러
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  // 이미지 업로드 핸들러 (multer 사용 API 호출)
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -170,10 +178,11 @@ function EditPage() {
       console.error("업로드 에러:", error);
       toast.error("서버와 통신 중 에러가 발생했습니다.", { id: uploadToast });
     } finally {
-      e.target.value = null;
+      e.target.value = null; // 파일 input 초기화
     }
   };
 
+  // GitHub 레포지토리 연동
   const handleGithubSync = async () => {
     let url = formData.githubUrl.trim();
     if (!url) {
@@ -237,6 +246,7 @@ function EditPage() {
     }
   };
 
+  // 프로젝트 입력 핸들러
   const handleProjectChange = (index, e) => {
     const { name, value } = e.target;
     const newProjects = [...formData.projects];
@@ -258,6 +268,7 @@ function EditPage() {
     toast("항목이 삭제되었습니다.", { icon: '🗑️'});
   };
 
+  // 드래그 앤 드롭 핸들러
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     const items = Array.from(formData.projects);
@@ -266,13 +277,16 @@ function EditPage() {
     setFormData({ ...formData, projects: items });
   };
 
+  // PDF 출력 함수
   const downloadPDF = () => {
     toast.success("PDF 출력을 시작합니다");
     setTimeout(() => window.print(), 1000);
   };
 
+  // 최종 저장 제출
   const handleSubmit = (e) => {
     e.preventDefault();
+    // 서브도메인 검증
     const currentSubdomain = formData.subdomain.trim().toLowerCase();
     if (!currentSubdomain) {
       toast.error("서브도메인을 입력해주세요");
@@ -283,6 +297,7 @@ function EditPage() {
       toast.error("서브도메인은 영문 소문자와 숫자만 사용할 수 있습니다.");
       return;
     }
+    // 기본 예약 도메인 차단
     const forbiddenSubdomains = ['www', 'api', 'admin', 'root', 'localhost', 'dev', 'test', 'master', 'main'];
     if (forbiddenSubdomains.includes(currentSubdomain)) {
       toast.error(`'${currentSubdomain}'은(는) 사용할 수 없는 단어입니다.`);
@@ -299,7 +314,7 @@ function EditPage() {
       .then((res) => res.json())
       .then((data) => {
         toast.success("성공적으로 저장 및 퍼블리싱 되었습니다.", { id: savingToast });
-        localStorage.removeItem("oneresume-profile-image"); 
+        localStorage.removeItem("oneresume-profile-image"); // 임시 이미지 등록 정보 초기화
       })
       .catch((err) => { 
         console.error("에러:", err);
@@ -310,7 +325,8 @@ function EditPage() {
   if (loading) return <div className="text-center py-20">데이터를 불러오는 중...</div>;
 
   return (
-    <div className={`min-h-screen py-12 px-4 font-sans ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+    // 배경색 slate-950, 애니메이션 duration-300
+    <div className={`min-h-screen py-12 px-4 font-sans transition-all duration-300 ${isDarkMode ? 'bg-slate-950' : 'bg-slate-50'}`}>
       <header className="text-center mb-12 relative print:hidden">
         <h1 className={`text-4xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>OneResume</h1>
         <p className="text-slate-500 font-medium text-lg">통합 이력서 관리를 위한 정밀 데이터 구축</p>
@@ -347,7 +363,7 @@ function EditPage() {
           handleGithubSync={handleGithubSync}
           handleDragEnd={handleDragEnd}
           handleImageUpload={handleImageUpload}
-										isDarkMode={isDarkMode}
+          isDarkMode={isDarkMode}
         />
         <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} />
       </div>

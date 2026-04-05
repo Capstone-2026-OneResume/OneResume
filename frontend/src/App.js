@@ -15,6 +15,7 @@ function App() {
   const parts = host.split('.');
   const isS3 = host.includes('s3-website');
   const subdomain = (parts.length > 1 && !isS3 && parts[0] !== 'www' && parts[0] !== 'localhost') ? parts[0] : null;
+		const savedTheme = localStorage.getItem("oneresume-theme") === "true";
 
   return (
     <>
@@ -30,6 +31,23 @@ function App() {
             maxWidth: '500px',
             fontWeight: '600',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+												// 다크모드일 때
+												background: savedTheme ? '#1e293b' : '#ffffff', // slate-800 : white
+            color: savedTheme ? '#f8fafc' : '#1e293b',      // slate-50 : slate-800
+            border: savedTheme ? '1px solid #334155' : '1px solid #f1f5f9', // slate-700 : slate-100
+											},
+          // 성공/에러 아이콘 테마도 맞춤 설정 가능
+          success: {
+            duration: 3000,
+            theme: {
+              primary: '#10b981', // emerald-500
+            },
+          },
+          error: {
+            duration: 4000,
+            theme: {
+              primary: '#ef4444', // red-500
+            },
           },
         }}
       />

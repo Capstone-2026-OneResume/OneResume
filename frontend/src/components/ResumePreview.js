@@ -16,23 +16,24 @@ const ResumePreview = React.forwardRef(({ formData, isDarkMode }, ref) => {
   const githubUsername = getGithubUsername(formData.githubUrl);
 
   // 다크모드 여부에 따라 변하는 색상 테마 딕셔너리
-const theme = {
-    container: isDarkMode ? "bg-slate-900 border-slate-700" : "bg-white border-slate-800",
-    name: isDarkMode ? "text-slate-100" : "text-slate-900",
+  // 배경색 slate-800
+  const theme = {
+    container: isDarkMode ? "bg-slate-800 border-slate-700 text-slate-100" : "bg-white border-slate-800 text-slate-900",
+    name: isDarkMode ? "text-white" : "text-slate-900",
     bio: isDarkMode ? "text-slate-400" : "text-slate-500",
     link: isDarkMode ? "text-blue-400" : "text-blue-600",
-    sectionTitle: isDarkMode ? "text-slate-200 border-slate-600" : "text-slate-800 border-slate-800",
+    sectionTitle: isDarkMode ? "text-slate-200 border-slate-700" : "text-slate-800 border-slate-800",
     textMain: isDarkMode ? "text-slate-200" : "text-slate-800",
     textSub: isDarkMode ? "text-slate-400" : "text-slate-600",
     divider: isDarkMode ? "border-slate-700" : "border-slate-200",
-    skillBg: isDarkMode ? "bg-slate-800 text-slate-200 border-slate-700" : "bg-slate-100 text-slate-700 border-slate-200",
-    boxBg: isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700",
+    skillBg: isDarkMode ? "bg-slate-700 text-slate-200 border-slate-700" : "bg-slate-100 text-slate-700 border-slate-200",
+    boxBg: isDarkMode ? "bg-slate-700/50 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700",
     timelineLine: isDarkMode ? "border-slate-700" : "border-slate-300",
-    timelineDot: isDarkMode ? "bg-slate-500" : "bg-slate-800",
+    timelineDot: isDarkMode ? "bg-slate-400" : "bg-slate-800",
   };
 
-		// 실제 깃허브의 오리지널 잔디 색상표 (Hex Code)
-		const calendarTheme = {
+  // 실제 깃허브의 오리지널 잔디 색상표 (Hex Code)
+  const calendarTheme = {
     light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
     dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
   };
@@ -46,16 +47,16 @@ const theme = {
       {/* 헤더 */}
       <div className={`border-b-2 pb-6 mb-8 text-center transition-colors duration-500 ${theme.divider}`}>
 
-							{ /* 프로필 사진 렌더링 영역 추가 */ }
-							{formData.profileImageUrl && (
-								<div className="flex justify-center mb-6">
-								<img
-								src={formData.profileImageUrl}
-								alt="프로필"
-								className="w-36 h-36 rounded-full object-cover border-4 border-slate-200 shadow-md"
-								/>
-								</div>
-							)}
+        { /* 프로필 사진 렌더링 영역 */ }
+        {formData.profileImageUrl && (
+          <div className="flex justify-center mb-6">
+            <img
+              src={formData.profileImageUrl}
+              alt="프로필"
+              className={`w-36 h-36 rounded-full object-cover border-4 shadow-md ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}
+            />
+          </div>
+        )}
 
         <h2 className={`text-4xl font-black mb-2 transition-colors duration-500 ${theme.name}`}>
           {formData.username || "이름 없음"}
@@ -70,13 +71,13 @@ const theme = {
           {formData.githubUrl && (
             <>
               <span className="opacity-50">|</span>
-              <a href={formData.githubUrl} className={`hover:underline transition-colors duration-500 ${theme.link}`}>GitHub</a>
+              <a href={formData.githubUrl} target="_blank" rel="noopener noreferrer" className={`hover:underline transition-colors duration-500 ${theme.link}`}>GitHub</a>
             </>
           )}
           {formData.blogUrl && (
             <>
               <span className="opacity-50">|</span>
-              <a href={formData.blogUrl} className={`hover:underline transition-colors duration-500 ${theme.link}`}>Blog</a>
+              <a href={formData.blogUrl} target="_blank" rel="noopener noreferrer" className={`hover:underline transition-colors duration-500 ${theme.link}`}>Blog</a>
             </>
           )}
         </div>
@@ -126,14 +127,13 @@ const theme = {
               Contributions
             </h3>
             <div className={`flex justify-center p-6 border rounded-xl overflow-x-auto custom-scrollbar transition-colors duration-500 ${theme.boxBg}`}>
-              { /* react-github-calendar 라이브러리를 사용하여 깃허브 잔디밭을 렌더링. 다크모드 여부에 따라 색상 테마 적용 */ }
               <GitHubCalendar 
                 username={githubUsername} 
                 blockSize={12} 
                 blockMargin={4} 
                 fontSize={12} 
                 colorScheme={isDarkMode ? "dark" : "light"}
-																theme={calendarTheme} /*오리지널 테마*/
+                theme={calendarTheme}
               />
             </div>
           </section>
