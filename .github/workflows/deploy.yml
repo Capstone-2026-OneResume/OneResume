@@ -38,6 +38,7 @@ jobs:
             echo "EMAIL_PASS=${{ secrets.EMAIL_PASS }}" >> .env
             echo "AWS_REGION=ap-northeast-2" >> .env
             echo "S3_BUCKET_NAME=oneresume-storage-parkungjung" >> .env 
+            echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
             
             # Prisma 세팅 및 서버 재시작
             npx prisma generate

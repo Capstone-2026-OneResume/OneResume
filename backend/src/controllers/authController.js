@@ -165,13 +165,26 @@ exports.forgotPassword = async (req, res) => {
                 resetPasswordExpires: new Date(Date.now() + 3600000) // 현재시간 + 1시간
             }
         });
-        // 3. 재설정 링크가 포함된 메일 발송
-        const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
+
+								// 3. 재설정 링크가 포함된 메일 발송
+								// 로컬과 배포 환경 모두 대응하도록 환경 변수 적용
+								const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+								const resetUrl = `${baseUrl}/reset-password/${resetToken}`;
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: user.email, // 해커가 입력한 이메일이 아닌, DB에 등록된 진짜 주인의 이메일로 발송
             subject: '[OneResume] 비밀번호 재설정 안내',
-            text: `비밀번호를 재설정하려면 다음 링크를 클릭하세요:\n\n${resetUrl}\n\n이 링크는 1시간 동안만 유효합니다`
+												html: `
+              <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+                <h2 style="color: #333;">비밀번호 재설정</h2>
+                <p>요청하신 비밀번호 재설정 링크를 안내해 드립니다.</p>
+                <p>아래 링크를 클릭하여 새로운 비밀번호를 설정해 주세요.</p>
+                <div style="margin: 30px 0;">
+                  <a href="${resetUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">비밀번호 재설정하기</a>
+                </div>
+                <p style="color: #666; font-size: 12px;">이 링크는 1시간 동안만 유효합니다. 본인이 요청하지 않았다면 이 메일을 무시해 주세요.</p>
+              </div>
+            `
         };
         await transporter.sendMail(mailOptions);
         console.log(`✅ [비밀번호 재설정 메일 발송] ${email}`);
