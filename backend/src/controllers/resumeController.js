@@ -26,7 +26,7 @@ exports.uploadImage = async (req, res) => {
         await s3.send(command);
 
         // 업로드된 파일의 공개 URL 생성 (버킷이 퍼블릭 액세스 허용되어 있다고 가정)
-        const fileUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        const fileUrl = `https://${bucketName}.s3.amazonaws.com/${fileName}`;
 
         console.log("✅ 이미지 S3 직접 업로드 성공:", fileUrl);
         res.status(200).json({ imageUrl: fileUrl });

@@ -53,6 +53,7 @@ const ResumePreview = React.forwardRef(({ formData, isDarkMode }, ref) => {
             <img
               src={formData.profileImageUrl}
               alt="프로필"
+														crossOrigin="annoymous" //CORS 정책 허용 속성 추가
               className={`w-36 h-36 rounded-full object-cover border-4 shadow-md ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}
             />
           </div>
