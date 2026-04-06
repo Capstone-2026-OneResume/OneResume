@@ -4,7 +4,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Link } from "react-router-dom";
 
-const Login = ({ onSuccess, onSwitch, isDarkMode }) => {
+const Login = ({ onSuccess, onSwitch, isDarkMode, rememberMe, setRememberMe }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -44,8 +44,43 @@ const Login = ({ onSuccess, onSwitch, isDarkMode }) => {
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} placeholder="••••••••" required />
         </div>
 
-        {/* 비밀번호 찾기 링크 추가 */}
-        <div className="text-right">
+        {/* 로그인 상태 유지 & 비밀번호 찾기 링크 추가 */}
+<div className="flex items-center justify-between px-1">
+          <label className="flex items-center cursor-pointer group">
+            <div className="relative">
+              {/* 실제 데이터 처리를 위한 숨겨진 체크박스 */}
+              <input 
+                type="checkbox" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="sr-only peer"
+              />
+              {/* 둥근 네모 커스텀 UI */}
+              <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 flex items-center justify-center
+                ${isDarkMode 
+                  ? 'bg-slate-800 border-slate-600 peer-checked:bg-blue-600 peer-checked:border-blue-600 group-hover:border-slate-500' 
+                  : 'bg-white border-slate-300 peer-checked:bg-blue-600 peer-checked:border-blue-600 group-hover:border-slate-400'
+                }`}>
+                {/* 체크 표시 (✓) */}
+                <svg 
+                  className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${
+                    rememberMe ? 'scale-100' : 'scale-0'
+                  }`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor" 
+                  strokeWidth="4"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            <span className={`ml-2.5 text-sm font-semibold transition-colors ${
+              isDarkMode ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700'
+            }`}>
+              로그인 유지
+            </span>
+          </label>
           <Link to="/forgot-password" className="text-sm font-semibold text-blue-500 hover:text-blue-400 transition-colors">
             비밀번호를 잊으셨나요?
           </Link>

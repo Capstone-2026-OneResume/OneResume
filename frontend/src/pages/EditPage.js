@@ -6,11 +6,10 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { API_BASE_URL } from "../config";
 
-function EditPage() {
+function EditPage({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
   const resumeRef = useRef();
   const [loading, setLoading] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // 이력서 데이터 상태
   const [formData, setFormData] = useState({
@@ -46,7 +45,7 @@ function EditPage() {
   // 인증 확인 및 데이터 로드
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("oneresume-token");
+      const token = localStorage.getItem("oneresume-token") || sessionStorage.getItem("oneresume-token");
       if (!token) {
         toast.error("로그인이 필요합니다.");
         navigate("/");
@@ -70,13 +69,10 @@ function EditPage() {
       } catch (error) {
         console.error("세션 만료:", error);
         localStorage.removeItem("oneresume-token");
+								sessionStorage.removeItem("oneresume-token");
         navigate("/");
       }
-
-      // 저장된 테마 불러오기
-      const savedTheme = localStorage.getItem("oneresume-theme");
-      if (savedTheme) setIsDarkMode(savedTheme === "true");
-      setLoading(false);
+						setLoading(false);
     };
     checkAuth();
   }, [mapUserDataToFields, navigate]);
@@ -132,14 +128,9 @@ function EditPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("oneresume-token");
+				sessionStorage.removeItem("oneresume-token");
     toast.success("로그아웃 되었습니다.");
     navigate("/");
-  };
-
-  const toggleDarkMode = () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    localStorage.setItem("oneresume-theme", newTheme.toString());
   };
 
   // 폼 입력 변경 핸들러
@@ -286,6 +277,7 @@ function EditPage() {
   // 최종 저장 제출
   const handleSubmit = (e) => {
     e.preventDefault();
+				const token = localStorage.getItem("oneresume-token"); // 토큰 가져오기
     // 서브도메인 검증
     const currentSubdomain = formData.subdomain.trim().toLowerCase();
     if (!currentSubdomain) {
@@ -308,7 +300,7 @@ function EditPage() {
 
     fetch(`${API_BASE_URL}/api/resume/save`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
       body: JSON.stringify(formData),
     })
       .then((res) => res.json())
