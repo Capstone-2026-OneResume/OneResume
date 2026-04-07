@@ -2,8 +2,8 @@ import { API_BASE_URL } from "../config";
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { PWD_REGEX, ValidationItem } from '../components/PasswordValidation';
 
-		const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 		const Signup = ({ onSuccess, onSwitch, isDarkMode }) => {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -31,6 +31,24 @@ import toast from 'react-hot-toast';
 				match: password.length > 0 && password === confirmPassword
 			});
 		}, [password, confirmPassword]);
+
+		// 입력창 테두리 및 배경색 제어 함수
+const getInputBorderClass = (value, isValidSection) => {
+    const baseClass = "w-full px-4 py-3 rounded-xl border-2 outline-none transition-all duration-200 focus:ring-2 ";
+    const bgClass = isDarkMode ? "bg-slate-900 text-white placeholder-slate-500 " : "bg-white text-slate-800 placeholder-slate-400 ";
+    
+    if (value.length > 0) {
+      return baseClass + bgClass + (
+        isValidSection 
+          ? // 성공
+            "border-emerald-400 focus:border-emerald-400 focus:ring-emerald-400/20" 
+          : // 실패
+            "border-red-400 focus:border-red-400 focus:ring-red-400/20"
+      );
+    }
+    // 초기 상태
+    return baseClass + bgClass + (isDarkMode ? "border-slate-700" : "border-slate-200");
+  };
 
   const handleSendCode = async () => {
     const loading = toast.loading("인증번호를 발송 중입니다...");
@@ -74,14 +92,6 @@ import toast from 'react-hot-toast';
       ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' 
       : 'bg-white border-slate-200 text-slate-800'
   }`;
-
-		//유효성 체크 아이템 컴포넌트
-		const ValidationItem = ({ isValid, text }) => (
-			<div className={`flex items-center text-xs font-bold transition-colors ${isValid ? 'text-emerald-500' : 'text-slate-400'}`}>
-				<span className="mr-1">{isValid ? '✓' : '○'}</span>
-				{text}
-			</div>
-		);
 
   return (
     <div className={`max-w-md w-full p-8 rounded-3xl shadow-2xl transition-all duration-300 border ${
@@ -134,15 +144,15 @@ import toast from 'react-hot-toast';
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={inputClass}
+                className={getInputBorderClass(password, validations.length && validations.upper && validations.number && validations.special)}
                 placeholder="••••••••"
               />
 														{ /* 비밀번호 인디케이터 UI */ }
-														<div className="grid grid-cols-2 gap-2 mt-3 px-1">
-															<ValidationItem isValid={validations.length} text="8자 이상" />
-															<ValidationItem isValid={validations.upper} text="대문자 포함" />
-															<ValidationItem isValid={validations.number} text="숫자 포함"/>
-															<ValidationItem isValid={validations.special} text="특수문자 포함" />
+														<div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-3 px-1">
+															<ValidationItem isValid={validations.length} text="8자 이상" isDirty={password.length > 0} />
+															<ValidationItem isValid={validations.upper} text="대문자 포함" isDirty={password.length > 0} />
+															<ValidationItem isValid={validations.number} text="숫자 포함" isDirty={password.length > 0} /> 
+															<ValidationItem isValid={validations.special} text="특수문자 포함" isDirty={password.length > 0} /> 
             </div>
 										</div>
             <div>
@@ -151,11 +161,11 @@ import toast from 'react-hot-toast';
                   type="password" 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={inputClass}
+																			className={getInputBorderClass(confirmPassword, validations.match)}
                   placeholder="••••••••"
                 />
 																<div className="mt-2 mt-1">
-																	<ValidationItem isValid={validations.match} text="비밀번호 일치" />
+																	<ValidationItem isValid={validations.match} text="비밀번호 일치" isDirty={confirmPassword.length > 0} />
 																	</div>
 															</div>
 													<div>

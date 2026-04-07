@@ -4,6 +4,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
+// 비밀번호 보안 정책 정규식 (8자 이상, 대문자, 숫자, 특수문자 포함)
+const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
 // 임시 인증 데이터 저장소 (서버 메모리 사용)
 // 유저가 인증에 성공했는지 잠시 기억해두는 장부.
 const verificationStore = new Map();
@@ -55,6 +58,13 @@ exports.signup = async (req, res) => {
     try {
         const { email, password, subdomain } = req.body;
 
+								// 서버측 비밀번호 유효성 검사
+								if (!PWD_REGEX.test(password)) {
+									return res.status(400).json({
+										message: "비밀번호 보안 정책을 충족하지 않습니다. (8자 이상, 대문자/숫자/특수문자 포함)"
+									});
+								}
+
         // 장부에서 이 사람이 인증을 마쳤는지 확인
         const storedData = verificationStore.get(email);
         if (!storedData || !storedData.isVerified) {
@@ -71,7 +81,6 @@ exports.signup = async (req, res) => {
 
         // 비밀번호 암호화
         const hashedPassword = await bcrypt.hash(password, 10);
-
         const tempUsername = email.split('@')[0]; // 이메일 앞부분을 임시 사용자 이름으로 사용 (실제 서비스에서는 별도 입력 받는 것이 좋음)
 
         // DB 저장
@@ -198,6 +207,13 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
     try {
         const { token, newPassword } = req.body;
+
+								if (!PWD_REGEX.test(newPassword)) {
+									return res.status(400).json({
+										message: "비밀번호 보안 정책을 충족하지 않습니다. (8자 이상, 대문자/숫자/특수문자 포함)"
+									});
+								};
+								
         // 1. 전달받은 토큰이 DB에 존재하며, 아직 만료되지 않았는지(현재 시간보다 미래인지) 확인
         const user = await prisma.user.findFirst({
             where: {
