@@ -12,6 +12,8 @@ const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
 const app = express();
 const port = 5000;
 
+app.set('trust proxy', 1);
+
 // [Security] Helmet 적용
 // 기본적으로 XSS, 클릭재킹(Clickjacking) 등을 방어하는 헤더를 추가.
 app.use(helmet({
