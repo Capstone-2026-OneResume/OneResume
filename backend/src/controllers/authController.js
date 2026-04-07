@@ -208,13 +208,14 @@ exports.resetPassword = async (req, res) => {
     try {
         const { token, newPassword } = req.body;
 
+								// 서버측 비밀번호 유효성 검사
 								if (!PWD_REGEX.test(newPassword)) {
 									return res.status(400).json({
-										message: "비밀번호 보안 정책을 충족하지 않습니다. (8자 이상, 대문자/숫자/특수문자 포함)"
+										message: "비밀번호 보안 정책을 충족하지 않습니다."
 									});
 								};
 								
-        // 1. 전달받은 토큰이 DB에 존재하며, 아직 만료되지 않았는지(현재 시간보다 미래인지) 확인
+        // 토큰 및 유저 확인
         const user = await prisma.user.findFirst({
             where: {
                 resetPasswordToken: token,
@@ -224,9 +225,9 @@ exports.resetPassword = async (req, res) => {
         if (!user) {
             return res.status(400).json({ message: "유효하지 않거나 만료된 링크입니다. 다시 시도해주세요." });
         }
-        // 2. 새 비밀번호 암호화
+        // 새 비밀번호 암호화
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        // 3. 비밀번호 업데이트 및 사용이 끝난 임시 토큰 초기화(보안)
+        // 비밀번호 업데이트 및 사용이 끝난 임시 토큰 초기화(보안)
         await prisma.user.update({
             where: { id: user.id },
             data: {
@@ -235,12 +236,37 @@ exports.resetPassword = async (req, res) => {
                 resetPasswordExpires: null
             }
         });
-        console.log(`✅ [비밀번호 변경 완료] ${user.email}`);
+
+// 비밀번호 변경 완료 알림 메일 발송
+const mailOptions = {
+	from: process.env.EMAIL_USER,
+	to: user.email,
+	subject: '[OneResume] 비밀번호가 성공적으로 변경되었습니다.',
+	html: `
+	<div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
+	<h2 style="color: #10b981;">비밀번호 변경 완료</h2>
+	<p>안녕하세요, <strong>${user.username || '회원'}</strong>님!</p>
+	<p>OneResume 계정의 비밀번호가 성공적으로 변경되었음을 알려드립니다.</p>
+ <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+  <p style="margin: 0; font-size: 14px; color: #64748b;">변경 일시: ${new Date().toLocaleString('ko-KR')}</p>
+	</div>
+	<p style="color: #ef4444; font-size: 13px; font-weight: bold;">
+  만약 본인이 비밀번호를 변경하지 않았다면, 즉시 고객센터...는 없고 문의하거나 계정 보안을 점검해 주세요.
+ </p>
+ <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+ <p style="font-size: 12px; color: #94a3b8;">본 메일은 시스템에 의해 자동으로 발송되었습니다.</p>
+	</div>
+`
+};
+
+// 메일 발송 (비동기로 실행하여 응답 속도에 영향을 주지 않도록 함)
+  transporter.sendMail(mailOptions).catch(err => console.error("알림 메일 발송 실패:", err));
+		console.log(`✅ [비밀번호 변경 완료 및 알림 발송] ${user.email}`);
         res.status(200).json({ message: "비밀번호가 성공적으로 변경되었습니다. 새 비밀번호로 로그인해주세요!" });
     } catch (error) {
         console.error("비밀번호 업데이트 에러:", error);
         res.status(500).json({ message: "비밀번호 변경 중 오류가 발생했습니다." });
-    }
+}
 };
 
 // [7] 내 정보 조회 (토큰 검증 및 새로고침 유지용)
