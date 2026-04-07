@@ -1,12 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
 const authRoutes = require('./src/routes/auth');
 const resumeRoutes = require('./src/routes/resume');
 const prisma = require('./src/config/prisma');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+
+const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 const app = express();
 const port = 5000;
@@ -19,7 +20,7 @@ app.use(helmet({
 
 // 2. CORS 설정
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: allowedOrigin,
   credentials: true
 }));
 
@@ -40,6 +41,9 @@ const limiter = rateLimit({
 
 // 모든 요청에 대해 리미터 적용
 app.use(limiter);
+
+// 미들웨어 설정
+app.use(express.json());
 
 // 분리한 라우터들을 메인 서버에 연결해주는 길 안내 표지판
 app.use('/api/auth', authRoutes);
