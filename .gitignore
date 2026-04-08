@@ -12,3 +12,4 @@ backend/dist/
 # 운영체제 임시 파일
 .DS_Store
 Thumbs.db
+.gemini
