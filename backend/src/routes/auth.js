@@ -51,9 +51,17 @@ router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 router.get('/me', authController.getMe);
 
+// [디버깅용] 서버가 최신 코드를 읽고 있는지 확인
+router.get('/check', (req, res) => {
+  res.json({ message: "Auth 라우터 정상 작동 중 (최신 버전)", time: new Date().toLocaleString() });
+});
+
 // [프로필 설정]
-// authMiddleware로 로그인 확인 -> upload.single로 사진 한 장 S3 업로드 -> 컨트롤러 실행
-router.put('/profile-setup', authMiddleware, upload.single('profileImage'), authController.setupProfile);
+// PUT과 POST 둘 다 허용하여 404 방지, authMiddleware로 로그인 확인 -> upload.single로 사진 한 장 S3 업로드 -> 컨트롤러 실행
+const profileUpload = upload.single('profileImage');
+
+router.put('/profile-setup', authMiddleware, profileUpload, authController.setupProfile);
+router.post('/profile-setup', authMiddleware, profileUpload, authController.setupProfile);
 
 // [비밀번호 재설정 관련]
 router.post('/forgot-password', authController.forgotPassword);
