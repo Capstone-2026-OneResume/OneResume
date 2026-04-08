@@ -20,7 +20,7 @@ model User {
   subdomain 			String   @unique // 여기에 user-id.oneresume.com의 id가 들어감.
 		profileImage String? 	// 프로필 이미지 경로
 		bio										String? 	// 한 줄 소개
-		profileImageUrl String? // 프로필 사진
+		profileImageUrl String? // 프로필 사진, S3 URL 저장용
 		githubUrl				String?  // 깃허브 링크 
 		blogUrl						String?		// 블로그 링크
 

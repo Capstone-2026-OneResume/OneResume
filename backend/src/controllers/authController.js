@@ -269,6 +269,34 @@ const mailOptions = {
 }
 };
 
+// [8] 간단 프로필 설정 (Onboarding) - S3 이미지 업로드 포함
+exports.setupProfile = async (req, res) => {
+	try {
+		const userId = req.user.id; // authMiddleware에서 넣어준 유저 정보
+		const { username, age, phone } = req.body;
+
+		const updateData = {
+			username: username,
+			// Prisma 스키마 필드명에 맞춰 수정하세요 (예: age, phoneNumber 등)
+			updatedAt: new Date(),
+	};
+	// S3에 파일이 업로드되었다면 URL 저장
+	if (req.file) {
+		updateData.profileImageUrl = req.file.location; // S3 실제 URL
+	}
+	const updatedUser = await prisma.user.update({
+		where: { id: userId },
+		data: updateData
+		});
+		res.status(200).json({
+			message: "프로필 설정이 완료되었습니다.",
+			user: updatedUser
+		});
+} catch (error) {
+	console.error("프로필 설정 에러:", error);
+	res.status(500).json({message: "프로필 저장 중 오류가 발생했습니다." });
+}
+};
 // [7] 내 정보 조회 (토큰 검증 및 새로고침 유지용)
 exports.getMe = async (req, res) => {
     try {

@@ -2,21 +2,29 @@ import { API_BASE_URL } from "../config";
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Login = ({ onSuccess, onSwitch, isDarkMode, rememberMe, setRememberMe }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+		const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     const loading = toast.loading("로그인 중...");
     try {
       const response = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
-      const { user } = response.data;
+      const { user, token } = response.data;
+
+						//토큰 저장
+						localStorage.setItem('token', token);
+
       toast.success(`${user.username}님, 반갑습니다`, { id: loading });
       
-      if (onSuccess) onSuccess(response.data);
+      if (onSuccess) {
+							onSuccess(response.data);
+						}
+						navigate('/setup-profile');
     } catch (err) {
       toast.error(err.response?.data?.message || "로그인 실패", { id: loading });
     }
