@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Login from "../components/Login";
 import Signup from "../components/Signup";
+import PageLayout from "../components/PageLayout";
 
 function AuthPage({ isDarkMode, toggleDarkMode }) {
   const [authMode, setAuthMode] = useState('login');
@@ -22,7 +23,7 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
 
 			if (isChecking) {
 				return (
-					<div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+					<div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-zinc-900' : 'bg-gray-50'}`}>
 						{/* 간단한 로딩 텍스트나 빈 화면 */}
 						<div className="animate-pulse text-slate-500 font-bold text-xl">OneResume Loading...</div>
 					</div>
@@ -35,24 +36,30 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
 					const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem("oneresume-token", data.token); // 토큰 저장
     }
-    navigate('/edit'); // 성공 시 편집 페이지로 이동!
+    
+    // 프로필 설정 완료 여부에 따른 리다이렉트 분기 (Login.js와 정합성 유지)
+    if (data.user && data.user.isProfileComplete) {
+      navigate('/edit');
+    } else {
+      navigate('/setup-profile');
+    }
   };
 
   return (
-    <div className={`min-h-screen py-12 px-4 font-sans transition-colors duration-300 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+    <PageLayout isDarkMode={isDarkMode}>
       <header className="text-center mb-12 relative print:hidden">
-        <h1 className={`text-4xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>OneResume</h1>
-        <p className="text-slate-500 font-medium text-lg">
+        <h1 className={`text-5xl font-black mb-3 tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>OneResume</h1>
+        <p className={`font-medium text-lg ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
           통합 이력서 관리를 위한 정밀 데이터 구축
         </p>
 
-        <div className="flex items-center justify-center gap-4 mt-6">
+        <div className="flex items-center justify-center gap-4 mt-8">
           <button
             onClick={toggleDarkMode}
-            className={`font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2 ${
+            className={`font-bold py-2.5 px-8 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2 border ${
               isDarkMode 
-                ? "bg-slate-800 hover:bg-slate-900 text-white border border-slate-700" 
-                : "bg-white hover:bg-slate-100 text-slate-800 border border-slate-200"
+                ? "bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700" 
+                : "bg-white hover:bg-zinc-50 text-zinc-800 border-zinc-200"
             }`}
           >
             {isDarkMode ? "☀️ 라이트 모드" : "🌙 다크 모드"}
@@ -60,7 +67,7 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
         </div>
       </header>
 
-      <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="flex items-center justify-center w-full">
         {authMode === 'login' ? (
           <Login onSuccess={handleAuthSuccess}
 																	onSwitch={() => setAuthMode('signup')}
@@ -75,7 +82,7 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
 																/>
         )}
       </div>
-    </div>
+    </PageLayout>
   );
 }
 

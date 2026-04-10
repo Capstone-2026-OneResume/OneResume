@@ -4,6 +4,7 @@ import ResumeForm from "../components/ResumeForm";
 import ResumePreview from "../components/ResumePreview";
 import toast from "react-hot-toast";
 import useResume from "../hooks/useResume";
+import PageLayout from "../components/PageLayout";
 
 function EditPage({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
@@ -22,7 +23,6 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     handleSubmit,
   } = useResume();
 
-  // 페이지 이탈 방지 경고
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       e.preventDefault();
@@ -32,7 +32,6 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     return () => { window.removeEventListener("beforeunload", handleBeforeUnload); };
   }, []);
 
-  // 복사 기능 함수 (legacy 지원 포함)
   const copyShareLink = () => {
     const currentSubdomain = formData.subdomain.trim();
     if (!currentSubdomain) {
@@ -78,57 +77,91 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     navigate("/");
   };
 
-  // PDF 출력 함수
   const downloadPDF = () => {
     toast.success("PDF 출력을 시작합니다");
     setTimeout(() => window.print(), 1000);
   };
 
-  if (loading) return <div className="text-center py-20">데이터를 불러오는 중...</div>;
+  if (loading) return (
+    <PageLayout isDarkMode={isDarkMode}>
+      <div className="h-full flex items-center justify-center animate-pulse text-slate-500 font-bold text-xl">
+        데이터를 불러오는 중...
+      </div>
+    </PageLayout>
+  );
 
   return (
-    <div className={`min-h-screen py-12 px-4 font-sans transition-all duration-300 ${isDarkMode ? 'bg-slate-950' : 'bg-slate-50'}`}>
-      <header className="text-center mb-12 relative print:hidden">
-        <h1 className={`text-4xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>OneResume</h1>
-        <p className="text-slate-500 font-medium text-lg">통합 이력서 관리를 위한 정밀 데이터 구축</p>
+    <PageLayout isDarkMode={isDarkMode} noPadding={true}>
+      {/* 1. 상단 바 (고정 높이) */}
+      <header className={`h-[72px] min-h-[72px] px-6 border-b flex items-center justify-between z-20 transition-colors duration-300 print:hidden ${
+        isDarkMode ? 'bg-zinc-900/80 border-zinc-800 backdrop-blur-md' : 'bg-white/80 border-zinc-200 backdrop-blur-md'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+            <span className="font-black text-xl">O</span>
+          </div>
+          <h1 className={`text-xl font-black tracking-tighter hidden md:block ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>OneResume</h1>
+        </div>
 
-        <div className="flex items-center justify-center gap-4 mt-6">
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             onClick={toggleDarkMode}
-            className={`font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2 ${
-              isDarkMode ? "bg-slate-800 hover:bg-slate-900 text-white border border-slate-700" : "bg-white hover:bg-slate-100 text-slate-800 border border-slate-200"
+            className={`p-2.5 rounded-xl transition-all active:scale-95 border ${
+              isDarkMode 
+                ? "bg-zinc-800 border-zinc-700 text-yellow-400 hover:bg-zinc-700" 
+                : "bg-gray-50 border-zinc-200 text-zinc-600 hover:bg-white"
             }`}
+            title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
           >
-            {isDarkMode ? "☀️ 라이트 모드" : "🌙 다크 모드"}
+            {isDarkMode ? "☀️" : "🌙"}
           </button>
-          <button onClick={copyShareLink} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2">
+          
+          <div className="h-6 w-[1px] bg-zinc-700/20 mx-1 hidden sm:block"></div>
+
+          <button onClick={copyShareLink} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95 flex items-center gap-2">
             <span>링크 복사</span>
           </button>
-          <button onClick={downloadPDF} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2">
-            <span>PDF로 내보내기</span>
+          <button onClick={downloadPDF} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95 flex items-center gap-2">
+            <span>PDF</span>
           </button>
-          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-all active:scale-95">
+          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">
             로그아웃
           </button>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-10">
-        <ResumeForm
-          formData={formData}
-          handleChange={handleChange}
-          handleProjectChange={handleProjectChange}
-          addProject={addProject}
-          removeProject={removeProject}
-          handleSubmit={handleSubmit}
-          handleGithubSync={handleGithubSync}
-          handleDragEnd={handleDragEnd}
-          handleImageUpload={handleImageUpload}
-          isDarkMode={isDarkMode}
-        />
-        <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} />
-      </div>
-    </div>
+      {/* 2. 메인 컨텐츠 (화면 꽉 채움) */}
+      <main className="flex-1 flex overflow-hidden w-full">
+        
+        {/* 왼쪽: 입력 폼 (독립 스크롤) */}
+        <div className={`w-full lg:w-1/2 h-full overflow-y-auto custom-scrollbar p-6 lg:p-10 border-r transition-colors duration-300 ${
+          isDarkMode ? 'border-zinc-800 bg-zinc-900/30' : 'border-zinc-200 bg-gray-50/30'
+        }`}>
+          <div className="max-w-[720px] mx-auto">
+            <ResumeForm
+              formData={formData}
+              handleChange={handleChange}
+              handleProjectChange={handleProjectChange}
+              addProject={addProject}
+              removeProject={removeProject}
+              handleSubmit={handleSubmit}
+              handleGithubSync={handleGithubSync}
+              handleDragEnd={handleDragEnd}
+              handleImageUpload={handleImageUpload}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+        </div>
+
+        {/* 오른쪽: 미리보기 (독립 스크롤) */}
+        <div className={`hidden lg:flex lg:w-1/2 h-full overflow-y-auto custom-scrollbar bg-zinc-500/5 items-start justify-center p-10`}>
+          <div className="w-full flex justify-center origin-top transform scale-[0.8] xl:scale-90 2xl:scale-100 transition-all duration-500">
+            <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} />
+          </div>
+        </div>
+
+      </main>
+    </PageLayout>
   );
 }
 

@@ -46,6 +46,15 @@ function App() {
     setIsDarkMode(savedTheme);
   }, []);
 
+  // isDarkMode 상태가 변할 때마다 html 태그에 dark 클래스 토글 (Tailwind dark 모드 지원)
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   // 테마 토글 함수 (자식 컴포넌트들에게 전달할 용도)
   const toggleDarkMode = () => {
     const newTheme = !isDarkMode;
@@ -92,7 +101,7 @@ function App() {
           <Routes>
             {/* 각 페이지에 isDarkMode와 필요 시 toggleDarkMode 전달 */}
             <Route path="/" element={<AuthPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />
-												<Route path="/setup-profile" element={<SetupProfile />} />
+												<Route path="/setup-profile" element={<SetupProfile isDarkMode={isDarkMode} />} />
             <Route 
               path="/edit" 
               element={<EditPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} 

@@ -44,8 +44,6 @@ const Login = ({ onSuccess, onSwitch, isDarkMode, rememberMe, setRememberMe }) =
 
   return (
     <div className={`relative w-full max-w-[440px] rounded-[40px] shadow-sm border p-8 md:p-10 flex flex-col gap-5 transition-all duration-300 ${theme.cardBg}`}>
-      {/* 상단 바 제거 완료 */}
-      
       <div className="text-center space-y-2">
         <div className="inline-block px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mb-1">
           <span className="text-blue-700 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest">Welcome Back</span>
@@ -116,8 +114,8 @@ const Login = ({ onSuccess, onSwitch, isDarkMode, rememberMe, setRememberMe }) =
         </button>
         
         <div className={`text-[9px] uppercase leading-3 tracking-tighter ${theme.subText}`}>
-          By continuing, you agree to our <span className="text-zinc-600 dark:text-zinc-300 font-bold">Terms of Service</span> and <br/>
-          <span className="text-zinc-600 dark:text-zinc-300 font-bold">Privacy Policy</span>.
+          By continuing, you agree to our <span className="text-zinc-600 dark:text-zinc-300 font-bold underline cursor-pointer">Terms of Service</span> and <br/>
+          <span className="text-zinc-600 dark:text-zinc-300 font-bold underline cursor-pointer">Privacy Policy</span>.
         </div>
       </div>
     </div>
