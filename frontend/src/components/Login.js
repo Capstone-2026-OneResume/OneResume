@@ -7,7 +7,7 @@ import { useNavigate, Link } from "react-router-dom";
 const Login = ({ onSuccess, onSwitch, isDarkMode, rememberMe, setRememberMe }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-		const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -16,93 +16,103 @@ const Login = ({ onSuccess, onSwitch, isDarkMode, rememberMe, setRememberMe }) =
       const response = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
       const { user, token } = response.data;
 
-						//토큰 저장
-						localStorage.setItem('token', token);
-
+      localStorage.setItem('token', token);
       toast.success(`${user.username}님, 반갑습니다`, { id: loading });
       
       if (onSuccess) {
-							onSuccess(response.data);
-						}
-						navigate('/setup-profile');
+        onSuccess(response.data);
+      }
+      navigate('/setup-profile');
     } catch (err) {
       toast.error(err.response?.data?.message || "로그인 실패", { id: loading });
     }
   };
 
-  const inputClass = `w-full px-4 py-3 rounded-xl border outline-none transition-all focus:ring-2 focus:ring-blue-500 ${
-    isDarkMode 
-      ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' 
-      : 'bg-white border-slate-200 text-slate-800'
-  }`;
+  const theme = {
+    cardBg: isDarkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-zinc-100',
+    titleText: isDarkMode ? 'text-zinc-100' : 'text-zinc-800',
+    labelText: isDarkMode ? 'text-zinc-400' : 'text-zinc-600',
+    inputBg: isDarkMode ? 'bg-zinc-700 border-zinc-600 text-zinc-100' : 'bg-gray-100 border-transparent text-zinc-800',
+    subText: isDarkMode ? 'text-zinc-500' : 'text-neutral-400'
+  };
 
   return (
-    <div className={`max-w-md w-full p-8 rounded-3xl shadow-2xl transition-all duration-300 border ${
-      isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
-    }`}>
-      <h2 className={`text-3xl font-black mb-8 text-center ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>OneResume</h2>
+    <div className={`relative w-full max-w-[440px] rounded-[40px] shadow-sm border p-8 md:p-10 flex flex-col gap-5 transition-all duration-300 ${theme.cardBg}`}>
+      {/* 상단 바 제거 완료 */}
       
-      <form onSubmit={handleLogin} className="space-y-5">
-        <div>
-          <label className={`block text-sm font-bold mb-2 ml-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>이메일</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder="example@gmail.com" required />
+      <div className="text-center space-y-2">
+        <div className="inline-block px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mb-1">
+          <span className="text-blue-700 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest">Welcome Back</span>
         </div>
-        <div>
-          <label className={`block text-sm font-bold mb-2 ml-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>비밀번호</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} placeholder="••••••••" required />
+        <h2 className={`text-3xl font-extrabold leading-tight ${theme.titleText}`}>OneResume</h2>
+        <p className={`text-xs font-medium ${theme.labelText}`}>통합 이력서 관리를 위한 정밀 데이터 구축</p>
+      </div>
+      
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div className="flex flex-col gap-1.5">
+          <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>이메일</label>
+          <input 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            className={`w-full px-5 py-3.5 rounded-[24px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-medium text-sm ${theme.inputBg}`} 
+            placeholder="example@gmail.com" 
+            required 
+          />
         </div>
 
-        {/* 로그인 상태 유지 & 비밀번호 찾기 링크 추가 */}
-<div className="flex items-center justify-between px-1">
+        <div className="flex flex-col gap-1.5">
+          <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>비밀번호</label>
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            className={`w-full px-5 py-3.5 rounded-[24px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-medium text-sm ${theme.inputBg}`} 
+            placeholder="••••••••" 
+            required 
+          />
+        </div>
+
+        <div className="flex items-center justify-between px-1">
           <label className="flex items-center cursor-pointer group">
             <div className="relative">
-              {/* 실제 데이터 처리를 위한 숨겨진 체크박스 */}
               <input 
                 type="checkbox" 
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="sr-only peer"
               />
-              {/* 둥근 네모 커스텀 UI */}
-              <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 flex items-center justify-center
+              <div className={`w-4 h-4 rounded-md border-2 transition-all duration-200 flex items-center justify-center
                 ${isDarkMode 
-                  ? 'bg-slate-800 border-slate-600 peer-checked:bg-blue-600 peer-checked:border-blue-600 group-hover:border-slate-500' 
-                  : 'bg-white border-slate-300 peer-checked:bg-blue-600 peer-checked:border-blue-600 group-hover:border-slate-400'
+                  ? 'bg-zinc-700 border-zinc-600 peer-checked:bg-blue-600 peer-checked:border-blue-600' 
+                  : 'bg-white border-zinc-300 peer-checked:bg-blue-600 peer-checked:border-blue-600'
                 }`}>
-                {/* 체크 표시 (✓) */}
-                <svg 
-                  className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${
-                    rememberMe ? 'scale-100' : 'scale-0'
-                  }`} 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor" 
-                  strokeWidth="4"
-                >
+                <svg className={`w-3 h-3 text-white transition-transform duration-200 ${rememberMe ? 'scale-100' : 'scale-0'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
             </div>
-            <span className={`ml-2.5 text-sm font-semibold transition-colors ${
-              isDarkMode ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700'
-            }`}>
-              로그인 유지
-            </span>
+            <span className={`ml-2 text-[11px] font-bold uppercase tracking-tighter ${theme.labelText}`}>로그인 유지</span>
           </label>
-          <Link to="/forgot-password" className="text-sm font-semibold text-blue-500 hover:text-blue-400 transition-colors">
-            비밀번호를 잊으셨나요?
+          <Link to="/forgot-password" virtual-link="true" className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline uppercase tracking-tighter">
+            비밀번호 찾기
           </Link>
         </div>
 
-        <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-black text-lg hover:bg-blue-700 shadow-lg transition-all active:scale-95">
-          로그인
+        <button type="submit" className="w-full py-3.5 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-[32px] font-bold text-base shadow-lg shadow-blue-700/10 transition-all transform hover:-translate-y-1 active:scale-95 mt-2">
+          로그인 →
         </button>
       </form>
 
-      <div className="mt-8 text-center">
-        <button onClick={onSwitch} className={`text-sm font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-          아직 계정이 없으신가요? <span className="text-blue-500 hover:underline font-bold ml-1">회원가입</span>
+      <div className="text-center mt-1 flex flex-col gap-3">
+        <button onClick={onSwitch} className={`text-[11px] font-bold uppercase tracking-tighter ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
+          아직 계정이 없으신가요? <span className="text-blue-600 dark:text-blue-400 hover:underline ml-1">회원가입 하기</span>
         </button>
+        
+        <div className={`text-[9px] uppercase leading-3 tracking-tighter ${theme.subText}`}>
+          By continuing, you agree to our <span className="text-zinc-600 dark:text-zinc-300 font-bold">Terms of Service</span> and <br/>
+          <span className="text-zinc-600 dark:text-zinc-300 font-bold">Privacy Policy</span>.
+        </div>
       </div>
     </div>
   );
