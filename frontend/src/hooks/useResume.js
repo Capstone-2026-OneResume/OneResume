@@ -17,6 +17,9 @@ const useResume = () => {
     bio: "",
     githubUrl: "",
     blogUrl: "",
+    age: "",
+    phone: "",
+    useInternationalAge: false,
     resumeTitle: "개발자 이력서",
     school: "",
     major: "",
@@ -37,6 +40,10 @@ const useResume = () => {
       profileImageUrl: user.profileImageUrl || "",
       githubUrl: user.githubUrl || "",
       blogUrl: user.blogUrl || "",
+      age: user.age || "",
+      phone: user.phone || "",
+      gender: user.gender || "",
+      useInternationalAge: user.useInternationalAge || false,
       resumeTitle: resume.title || "개발자 이력서",
       school: eduParts[0] || "",
       major: eduParts[1] || "",
@@ -83,10 +90,26 @@ const useResume = () => {
     checkAuth();
   }, [mapUserDataToFields, navigate]);
 
-  // 폼 입력 변경 핸들러
+  // 폼 입력 변경 핸들러 (체크박스 및 전화번호 자동 하이픈 대응)
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    let { name, value, type, checked } = e.target;
+
+    // 전화번호 자동 하이픈 로직
+    if (name === 'phone') {
+      value = value.replace(/[^0-9]/g, ''); // 숫자만 남기기
+      if (value.length <= 3) {
+        // 그대로 유지
+      } else if (value.length <= 7) {
+        value = `${value.slice(0, 3)}-${value.slice(3)}`;
+      } else {
+        value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`;
+      }
+    }
+
+    setFormData({ 
+      ...formData, 
+      [name]: type === 'checkbox' ? checked : value 
+    });
   };
 
   // 프로젝트 입력 핸들러

@@ -76,14 +76,69 @@ const ResumeForm = ({
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-4 flex flex-col gap-2">
                 <label className={`pl-1 text-xs font-bold uppercase tracking-widest ${theme.labelText}`}>이름</label>
                 <input type="text" name="username" value={formData.username} onChange={handleChange} className={`w-full px-5 py-3.5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg}`} />
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="col-span-3 flex flex-col gap-2">
+                <label className={`pl-1 text-xs font-bold uppercase tracking-widest ${theme.labelText}`}>성별</label>
+                <div className={`relative flex p-1 rounded-2xl border-2 transition-all ${theme.inputBg} h-[53.6px]`}>
+                  {/* 슬라이딩 배경 알약 */}
+                  <div 
+                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-md ${
+                      formData.gender === 'male' 
+                        ? 'left-1 bg-blue-600' 
+                        : (formData.gender === 'female' ? 'left-[calc(50%)] bg-pink-500' : 'opacity-0')
+                    }`}
+                  />
+                  
+                  <button
+                    type="button"
+                    onClick={() => handleChange({ target: { name: 'gender', value: 'male' } })}
+                    className={`relative z-10 flex-1 flex items-center justify-center text-sm font-bold transition-colors duration-300 ${
+                      formData.gender === 'male' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    남
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChange({ target: { name: 'gender', value: 'female' } })}
+                    className={`relative z-10 flex-1 flex items-center justify-center text-sm font-bold transition-colors duration-300 ${
+                      formData.gender === 'female' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    여
+                  </button>
+                </div>
+              </div>
+              <div className="col-span-5 flex flex-col gap-2">
                 <label className={`pl-1 text-xs font-bold uppercase tracking-widest ${theme.labelText}`}>이메일</label>
                 <input type="email" name="email" value={formData.email} onChange={handleChange} className={`w-full px-5 py-3.5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg}`} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between pl-1">
+                  <label className={`text-xs font-bold uppercase tracking-widest ${theme.labelText}`}>나이</label>
+                  <label className="flex items-center gap-1.5 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      name="useInternationalAge" 
+                      checked={formData.useInternationalAge || false} 
+                      onChange={handleChange} 
+                      className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-700 text-blue-600 focus:ring-offset-zinc-800 transition-all"
+                    />
+                    <span className={`text-[10px] font-bold ${isDarkMode ? 'text-zinc-500 group-hover:text-zinc-300' : 'text-zinc-400 group-hover:text-zinc-600'} transition-colors`}>만 나이 표시</span>
+                  </label>
+                </div>
+                <input type="number" name="age" value={formData.age} onChange={handleChange} placeholder="숫자만 입력" className={`w-full px-5 py-3.5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg}`} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className={`pl-1 text-xs font-bold uppercase tracking-widest ${theme.labelText}`}>전화번호</label>
+                <input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="010-0000-0000" className={`w-full px-5 py-3.5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg}`} />
               </div>
             </div>
             <div className="flex flex-col gap-2">
@@ -192,10 +247,16 @@ const ResumeForm = ({
       </div>
 
       {/* 3. 하단 고정 액션 바 */}
-      <div className="p-6 border-t border-zinc-700/20 bg-zinc-500/5">
+      <div className="p-8 border-t border-zinc-700/20 bg-zinc-500/5">
         <form onSubmit={handleSubmit}>
-          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-lg py-4.5 rounded-2xl shadow-xl shadow-blue-600/20 transition-all transform hover:-translate-y-1 active:scale-95">
-            이력서 저장 및 퍼블리싱 →
+          <button 
+            type="submit" 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-xl py-5 rounded-[24px] shadow-2xl shadow-blue-600/30 transition-all transform hover:-translate-y-1.5 active:scale-[0.98] flex items-center justify-center gap-3 group"
+          >
+            <span>이력서 저장</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
           </button>
         </form>
       </div>

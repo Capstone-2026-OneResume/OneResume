@@ -169,9 +169,26 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          <button onClick={toggleDarkMode} className={`p-2.5 rounded-xl border ${isDarkMode ? "bg-zinc-800 border-zinc-700 text-yellow-400" : "bg-gray-50 border-zinc-200 text-zinc-600"}`}>
-            {isDarkMode ? "☀️" : "🌙"}
+          {/* iOS 스타일 다크모드 스위치 - 크기 확대 및 정밀 중앙 정렬 */}
+          <button
+            onClick={toggleDarkMode}
+            className={`relative w-[68px] h-[40px] rounded-full transition-all duration-500 border overflow-hidden flex items-center ${
+              isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-blue-100 border-blue-200"
+            }`}
+          >
+            {/* 움직이는 원 (Slider) */}
+            <div 
+              className={`absolute w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-md ${
+                isDarkMode ? "translate-x-[32px] bg-zinc-950" : "translate-x-1 bg-white"
+              }`}
+            >
+              <span className="text-sm leading-none transform -translate-y-[1px]">
+                {isDarkMode ? "🌙" : "☀️"}
+              </span>
+            </div>
           </button>
+          
+          <div className="h-6 w-[1px] bg-zinc-700/20 mx-1 hidden sm:block"></div>
           <button onClick={copyShareLink} className="bg-blue-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">링크 복사</button>
           <button onClick={downloadPDF} className="bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">PDF</button>
           <button onClick={handleLogout} className="bg-red-500 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">로그아웃</button>

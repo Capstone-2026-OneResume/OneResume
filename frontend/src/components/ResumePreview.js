@@ -65,17 +65,36 @@ const ResumePreview = React.forwardRef(({ formData, isDarkMode, paneWidth = 50, 
         )}
         <h2 className={`text-4xl font-black mb-2 ${theme.name}`}>{formData.username || "이름 없음"}</h2>
         <p className={`text-lg font-medium mb-4 ${theme.bio}`}>{formData.bio}</p>
-        <div className={`flex justify-center gap-4 text-xs font-bold ${theme.textSub}`}>
-          <span>{formData.email}</span>
-          {formData.githubUrl && (
-            <a href={formData.githubUrl} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick} className={`hover:underline ${theme.link}`}>GitHub</a>
+        <div className={`flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs font-bold ${theme.textSub}`}>
+          {formData.email && <span>{formData.email}</span>}
+          {formData.phone && (
+            <div className="flex items-center gap-4">
+              <span className="opacity-30">|</span>
+              <span>{formData.phone}</span>
+            </div>
+          )}
+          {formData.age && (
+            <div className="flex items-center gap-4">
+              <span className="opacity-30">|</span>
+              <span>
+                {formData.useInternationalAge ? `만 ${formData.age}세` : `${formData.age}세`}
+                {formData.gender && ` (${formData.gender === 'male' ? '남' : '여'})`}
+              </span>
+            </div>
+          )}          {formData.githubUrl && (
+            <div className="flex items-center gap-4">
+              <span className="opacity-30">|</span>
+              <a href={formData.githubUrl} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick} className={`hover:underline ${theme.link}`}>GitHub</a>
+            </div>
           )}
           {formData.blogUrl && (
-            <a href={formData.blogUrl} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick} className={`hover:underline ${theme.link}`}>Blog</a>
+            <div className="flex items-center gap-4">
+              <span className="opacity-30">|</span>
+              <a href={formData.blogUrl} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick} className={`hover:underline ${theme.link}`}>Blog</a>
+            </div>
           )}
         </div>
-      </div>
-      <section className="mb-10">
+        </div>      <section className="mb-10">
         <h3 className={`text-xs uppercase tracking-widest font-black mb-4 border-b-2 pb-1 ${theme.sectionTitle}`}>Education</h3>
         <div className="flex justify-between items-end">
           <div><p className={`text-xl font-bold ${theme.textMain}`}>{formData.school}</p><p className={`text-base font-medium ${theme.textSub}`}>{formData.major}</p></div>
