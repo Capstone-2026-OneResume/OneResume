@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ResumeForm from "../components/ResumeForm";
 import ResumePreview from "../components/ResumePreview";
@@ -10,6 +10,42 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
   const resumeRef = useRef();
   
+  const [leftWidth, setLeftWidth] = useState(50);
+  const [isResizing, setIsResizing] = useState(false);
+  const [focusedPage, setFocusedPage] = useState(null);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isResizing) return;
+    const newWidth = (e.clientX / window.innerWidth) * 100;
+    if (newWidth > 20 && newWidth < 80) setLeftWidth(newWidth);
+  }, [isResizing]);
+
+  const handleMouseUp = useCallback(() => {
+    if (isResizing) {
+      setIsResizing(false);
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+    }
+  }, [isResizing]);
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  const startResizing = (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
   const {
     formData,
     loading,
@@ -22,6 +58,32 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     handleDragEnd,
     handleSubmit,
   } = useResume();
+
+  // 현재 유효한 페이지 ID 리스트 계산
+  const getPageIds = () => {
+    const ids = [1];
+    const hasGithub = formData.githubUrl?.trim();
+    if (hasGithub || formData.projects.length > 0) ids.push(2);
+    if (formData.projects.length > 2) ids.push(3);
+    ids.push(4);
+    return ids;
+  };
+
+  const handlePrevPage = (e) => {
+    e.stopPropagation();
+    const ids = getPageIds();
+    const currentIndex = ids.indexOf(focusedPage);
+    const prevIndex = (currentIndex - 1 + ids.length) % ids.length;
+    setFocusedPage(ids[prevIndex]);
+  };
+
+  const handleNextPage = (e) => {
+    e.stopPropagation();
+    const ids = getPageIds();
+    const currentIndex = ids.indexOf(focusedPage);
+    const nextIndex = (currentIndex + 1) % ids.length;
+    setFocusedPage(ids[nextIndex]);
+  };
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -90,9 +152,12 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     </PageLayout>
   );
 
+  const baseScale = focusedPage ? 1.0 : (window.innerWidth > 1536 ? 0.52 : (window.innerWidth > 1280 ? 0.48 : 0.42));
+  const transformOrigin = focusedPage ? "center center" : "top center";
+  const marginTop = focusedPage ? "0" : "40px";
+
   return (
     <PageLayout isDarkMode={isDarkMode} noPadding={true}>
-      {/* 1. 상단 바 (고정 높이) */}
       <header className={`h-[72px] min-h-[72px] px-6 border-b flex items-center justify-between z-20 transition-colors duration-300 print:hidden ${
         isDarkMode ? 'bg-zinc-900/80 border-zinc-800 backdrop-blur-md' : 'bg-white/80 border-zinc-200 backdrop-blur-md'
       }`}>
@@ -104,40 +169,23 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          <button
-            onClick={toggleDarkMode}
-            className={`p-2.5 rounded-xl transition-all active:scale-95 border ${
-              isDarkMode 
-                ? "bg-zinc-800 border-zinc-700 text-yellow-400 hover:bg-zinc-700" 
-                : "bg-gray-50 border-zinc-200 text-zinc-600 hover:bg-white"
-            }`}
-            title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
-          >
+          <button onClick={toggleDarkMode} className={`p-2.5 rounded-xl border ${isDarkMode ? "bg-zinc-800 border-zinc-700 text-yellow-400" : "bg-gray-50 border-zinc-200 text-zinc-600"}`}>
             {isDarkMode ? "☀️" : "🌙"}
           </button>
-          
-          <div className="h-6 w-[1px] bg-zinc-700/20 mx-1 hidden sm:block"></div>
-
-          <button onClick={copyShareLink} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95 flex items-center gap-2">
-            <span>링크 복사</span>
-          </button>
-          <button onClick={downloadPDF} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95 flex items-center gap-2">
-            <span>PDF</span>
-          </button>
-          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">
-            로그아웃
-          </button>
+          <button onClick={copyShareLink} className="bg-blue-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">링크 복사</button>
+          <button onClick={downloadPDF} className="bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">PDF</button>
+          <button onClick={handleLogout} className="bg-red-500 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">로그아웃</button>
         </div>
       </header>
 
-      {/* 2. 메인 컨텐츠 (화면 꽉 채움) */}
-      <main className="flex-1 flex overflow-hidden w-full">
-        
-        {/* 왼쪽: 입력 폼 (독립 스크롤) */}
-        <div className={`w-full lg:w-1/2 h-full overflow-y-auto custom-scrollbar p-6 lg:p-10 border-r transition-colors duration-300 ${
-          isDarkMode ? 'border-zinc-800 bg-zinc-900/30' : 'border-zinc-200 bg-gray-50/30'
-        }`}>
-          <div className="max-w-[720px] mx-auto">
+      <main className="h-[calc(100vh-72px)] flex overflow-hidden w-full relative">
+        <div 
+          style={{ width: `${leftWidth}%` }}
+          className={`h-full overflow-y-auto custom-scrollbar p-6 lg:p-10 border-r transition-none ${
+            isDarkMode ? 'border-zinc-800 bg-zinc-900/30' : 'border-zinc-200 bg-gray-50/30'
+          }`}
+        >
+          <div className="max-w-[720px] mx-auto pb-20">
             <ResumeForm
               formData={formData}
               handleChange={handleChange}
@@ -153,13 +201,92 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
           </div>
         </div>
 
-        {/* 오른쪽: 미리보기 (독립 스크롤) */}
-        <div className={`hidden lg:flex lg:w-1/2 h-full overflow-y-auto custom-scrollbar bg-zinc-500/5 items-start justify-center p-10`}>
-          <div className="w-full flex justify-center origin-top transform scale-[0.8] xl:scale-90 2xl:scale-100 transition-all duration-500">
-            <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} />
-          </div>
+        <div onMouseDown={startResizing} className="relative w-1 group cursor-col-resize z-50 flex-shrink-0">
+          <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-blue-500/30 transition-colors" />
+          <div className="absolute inset-y-0 left-0 w-[1px] bg-zinc-800 transition-colors group-hover:bg-blue-500" />
         </div>
 
+        <div 
+          style={{ width: `${100 - leftWidth}%` }}
+          className={`hidden lg:flex h-full ${focusedPage ? 'overflow-hidden' : 'overflow-y-auto'} overflow-x-hidden custom-scrollbar relative items-start justify-center transition-none ${
+            isDarkMode ? 'bg-[#09090b]' : 'bg-[#f4f4f5]'
+          }`}
+        >
+          {isResizing && <div className="absolute inset-0 z-40" />}
+
+          {/* 좌/우 슬라이드 버튼 (확대 시에만 노출) */}
+          {focusedPage && (
+            <>
+              <button 
+                onClick={handlePrevPage}
+                className="absolute left-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90"
+              >
+                <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all" />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:-translate-x-0.5 transition-all">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+              <button 
+                onClick={handleNextPage}
+                className="absolute right-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90"
+              >
+                <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all" />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </>
+          )}
+
+          {/* 우측 상단 X 닫기 버튼 (확대 시에만 노출) */}
+          {focusedPage && (
+            <button 
+              onClick={() => setFocusedPage(null)}
+              className="absolute right-8 top-8 w-12 h-12 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90"
+            >
+              <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-red-500/20 group-hover:border-red-500/30 transition-all" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-red-400 transition-all">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          )}
+
+          {/* 하단 그리드 복귀 버튼 (확대 시에만 노출) */}
+          {focusedPage && (
+            <button 
+              onClick={() => setFocusedPage(null)}
+              className="absolute bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full flex items-center gap-2 group z-50 transition-all duration-500 hover:scale-105 active:scale-95 shadow-2xl"
+            >
+              <div className="absolute inset-0 bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-full group-hover:bg-zinc-800 transition-all" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-blue-400">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span className="relative z-10 text-white font-bold text-sm tracking-tight">그리드 뷰</span>
+            </button>
+          )}
+
+          <div 
+            className="transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu flex items-center justify-center"
+            style={{ 
+              transform: `scale(${baseScale})`, 
+              transformOrigin: transformOrigin,
+              marginTop: marginTop
+            }}
+          >
+            <ResumePreview 
+              formData={formData} 
+              ref={resumeRef} 
+              isDarkMode={isDarkMode} 
+              paneWidth={100 - leftWidth}
+              focusedPage={focusedPage}
+              setFocusedPage={setFocusedPage}
+            />
+          </div>
+        </div>
       </main>
     </PageLayout>
   );
