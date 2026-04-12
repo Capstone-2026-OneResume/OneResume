@@ -67,6 +67,7 @@ exports.saveResume = async (req, res) => {
         // 프론트엔드에서 보낸 데이터 구조 분해 할당
         const {
             username, email, subdomain, bio, githubUrl, blogUrl, profileImageUrl,
+            age, gender, phone,
             resumeTitle, school, major, gpa, skills, projects
         } = req.body;
 
@@ -74,6 +75,9 @@ exports.saveResume = async (req, res) => {
         if (!email || !subdomain) {
             return res.status(400).json({ message: "이메일과 개인 도메인은 필수 입력 사항입니다." });
         }
+
+        // age를 숫자로 변환 (값이 있을 때만)
+        const parsedAge = age ? parseInt(age, 10) : null;
 
         // 2) 서브도메인 예약어(금지어) 차단 로직
         const forbiddenWords = ['admin', 'api', 'www', 'mail', 'master', 'root', 'help', 'login', '너임마청년']
@@ -109,7 +113,10 @@ exports.saveResume = async (req, res) => {
                 bio: bio || "",
                 profileImageUrl: profileImageUrl || "",
                 githubUrl: githubUrl || "",
-                blogUrl: blogUrl || ""
+                blogUrl: blogUrl || "",
+                age: parsedAge,
+                gender: gender || null,
+                phone: phone || null
             },
             create: {
                 email: email,
@@ -119,7 +126,10 @@ exports.saveResume = async (req, res) => {
                 bio: bio || "",
                 profileImageUrl: profileImageUrl || "",
                 githubUrl: githubUrl || "",
-                blogUrl: blogUrl || ""
+                blogUrl: blogUrl || "",
+                age: parsedAge,
+                gender: gender || null,
+                phone: phone || null
             }
         });
 

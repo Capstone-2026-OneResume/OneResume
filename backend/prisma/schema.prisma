@@ -24,6 +24,7 @@ model User {
 		githubUrl				String?  // 깃허브 링크 
 		blogUrl						String?		// 블로그 링크
 		age        					Int?     // 나이
+		gender      				String?  // 성별
 		phone      					String?  // 전화번호
 		isProfileComplete Boolean @default(false) // 온보딩 완료 여부
 

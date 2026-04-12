@@ -326,18 +326,8 @@ exports.getMe = async (req, res) => {
 
         if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 
-        res.status(200).json({
-            user: { 
-                email: user.email, 
-                subdomain: user.subdomain, 
-                username: user.username,
-                bio: user.bio,
-                profileImageUrl: user.profileImageUrl,
-                githubUrl: user.githubUrl,
-                blogUrl: user.blogUrl,
-                resumes: user.resumes
-            }
-        });
+        const { password: _, ...safeUser } = user;
+        res.status(200).json({ user: safeUser });
     } catch (error) {
         console.error("토큰 검증 에러:", error);
         res.status(403).json({ message: "유효하지 않거나 만료된 토큰입니다." });
