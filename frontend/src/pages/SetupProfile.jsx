@@ -5,7 +5,7 @@ import { API_BASE_URL } from "../config";
 import toast from 'react-hot-toast';
 import PageLayout from '../components/PageLayout';
 
-const SetupProfile = ({ isDarkMode }) => {
+const SetupProfile = ({ isDarkMode, toggleDarkMode }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -62,7 +62,7 @@ const SetupProfile = ({ isDarkMode }) => {
   };
 
   return (
-    <PageLayout isDarkMode={isDarkMode}>
+    <PageLayout isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode}>
       <div className="w-full max-w-[672px] flex flex-col gap-12">
         <div className="text-center space-y-4">
           <div className="inline-block px-4 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
@@ -72,7 +72,7 @@ const SetupProfile = ({ isDarkMode }) => {
           <p className="text-zinc-600 dark:text-zinc-400 text-lg font-medium">One Resume에서 당신의 커리어 여정을 시작하기 위한 첫 번째 단계입니다.</p>
         </div>
 
-        {/* 메인 카드: 다크모드일 때 배경색 및 보더 변경 */}
+        {/* 메인 카드 */}
         <div className="relative bg-white dark:bg-zinc-800 rounded-[48px] shadow-2xl border border-zinc-100 dark:border-zinc-700 p-12 pt-16 flex flex-col gap-8 transition-all">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-t-[48px] overflow-hidden">
             <div className="w-1/3 h-full bg-blue-700 shadow-[0px_0px_12px_rgba(45,71,226,0.4)]"></div>
@@ -121,7 +121,7 @@ const SetupProfile = ({ isDarkMode }) => {
             <div className="flex flex-col items-center gap-6 pt-4">
               <button 
                 type="submit"
-                className="w-full max-w-sm py-4.5 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-[48px] font-bold text-xl shadow-xl shadow-blue-700/20 transition-all transform hover:-translate-y-1 active:scale-95"
+                className="w-full max-w-sm py-4 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-[48px] font-bold text-xl shadow-xl shadow-blue-700/20 transition-all transform hover:-translate-y-1 active:scale-95"
               >
                 다음 단계로 →
               </button>

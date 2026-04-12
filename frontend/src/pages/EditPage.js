@@ -5,6 +5,7 @@ import ResumePreview from "../components/ResumePreview";
 import toast from "react-hot-toast";
 import useResume from "../hooks/useResume";
 import PageLayout from "../components/PageLayout";
+import ThemeToggle from "../components/ThemeToggle"; // 상단 임포트 완료
 
 function EditPage({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
@@ -59,7 +60,6 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     handleSubmit,
   } = useResume();
 
-  // 현재 유효한 페이지 ID 리스트 계산
   const getPageIds = () => {
     const ids = [1];
     const hasGithub = formData.githubUrl?.trim();
@@ -169,24 +169,8 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          {/* iOS 스타일 다크모드 스위치 - 크기 확대 및 정밀 중앙 정렬 */}
-          <button
-            onClick={toggleDarkMode}
-            className={`relative w-[68px] h-[40px] rounded-full transition-all duration-500 border overflow-hidden flex items-center ${
-              isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-blue-100 border-blue-200"
-            }`}
-          >
-            {/* 움직이는 원 (Slider) */}
-            <div 
-              className={`absolute w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-md ${
-                isDarkMode ? "translate-x-[32px] bg-zinc-950" : "translate-x-1 bg-white"
-              }`}
-            >
-              <span className="text-sm leading-none transform -translate-y-[1px]">
-                {isDarkMode ? "🌙" : "☀️"}
-              </span>
-            </div>
-          </button>
+          {/* 공통 ThemeToggle 적용 */}
+          <ThemeToggle isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
           
           <div className="h-6 w-[1px] bg-zinc-700/20 mx-1 hidden sm:block"></div>
           <button onClick={copyShareLink} className="bg-blue-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">링크 복사</button>
@@ -231,57 +215,30 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
         >
           {isResizing && <div className="absolute inset-0 z-40" />}
 
-          {/* 좌/우 슬라이드 버튼 (확대 시에만 노출) */}
           {focusedPage && (
             <>
-              <button 
-                onClick={handlePrevPage}
-                className="absolute left-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90"
-              >
+              <button onClick={handlePrevPage} className="absolute left-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90">
                 <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all" />
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:-translate-x-0.5 transition-all">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:-translate-x-0.5 transition-all"><polyline points="15 18 9 12 15 6"></polyline></svg>
               </button>
-              <button 
-                onClick={handleNextPage}
-                className="absolute right-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90"
-              >
+              <button onClick={handleNextPage} className="absolute right-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90">
                 <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all" />
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all"><polyline points="9 18 15 12 9 6"></polyline></svg>
               </button>
             </>
           )}
 
-          {/* 우측 상단 X 닫기 버튼 (확대 시에만 노출) */}
           {focusedPage && (
-            <button 
-              onClick={() => setFocusedPage(null)}
-              className="absolute right-8 top-8 w-12 h-12 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90"
-            >
+            <button onClick={() => setFocusedPage(null)} className="absolute right-8 top-8 w-12 h-12 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90">
               <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-red-500/20 group-hover:border-red-500/30 transition-all" />
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-red-400 transition-all">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-red-400 transition-all"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           )}
 
-          {/* 하단 그리드 복귀 버튼 (확대 시에만 노출) */}
           {focusedPage && (
-            <button 
-              onClick={() => setFocusedPage(null)}
-              className="absolute bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full flex items-center gap-2 group z-50 transition-all duration-500 hover:scale-105 active:scale-95 shadow-2xl"
-            >
+            <button onClick={() => setFocusedPage(null)} className="absolute bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full flex items-center gap-2 group z-50 transition-all duration-500 hover:scale-105 active:scale-95 shadow-2xl">
               <div className="absolute inset-0 bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-full group-hover:bg-zinc-800 transition-all" />
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-blue-400">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-blue-400"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
               <span className="relative z-10 text-white font-bold text-sm tracking-tight">그리드 뷰</span>
             </button>
           )}

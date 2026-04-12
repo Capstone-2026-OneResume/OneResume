@@ -39,99 +39,101 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
   const isRightSide = isSignup || isForgot;
 
   return (
-    <PageLayout isDarkMode={isDarkMode}>
-      <header className="text-center mb-10 relative print:hidden">
+    <PageLayout isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode}>
+      {/* 상단 헤더 (로고 & 문구) - 위로 고정 */}
+      <header className="text-center mt-4 mb-6 relative print:hidden">
         <h1 className={`text-5xl font-black mb-3 tracking-tight ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>OneResume</h1>
         <p className={`font-medium text-lg ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>통합 이력서 관리를 위한 정밀 데이터 구축</p>
-        <button onClick={toggleDarkMode} className={`mt-8 font-bold py-2.5 px-8 rounded-full shadow-lg transition-all active:scale-95 border ${isDarkMode ? "bg-zinc-800 text-white border-zinc-700" : "bg-white text-zinc-800 border-zinc-200"}`}>
-          {isDarkMode ? "☀️ 라이트 모드" : "🌙 다크 모드"}
-        </button>
       </header>
 
-      <div className={`relative w-full max-w-[1150px] min-h-[850px] mx-auto overflow-hidden rounded-[48px] border transition-all duration-500 shadow-2xl ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-        
-        {/* 왼쪽 섹션 (회원가입 & 비밀번호 찾기) */}
-        <div className={`absolute top-0 left-0 w-1/2 h-full transition-all duration-700 ease-in-out flex flex-col justify-center px-10 lg:px-20 ${isRightSide ? 'opacity-100 z-50' : 'opacity-0 z-10 pointer-events-none'}`}>
-          {authMode === 'signup' ? (
-            <Signup onSuccess={handleAuthSuccess} onSwitch={() => setAuthMode('login')} isDarkMode={isDarkMode} />
-          ) : (
-            <ForgotPassword onSwitch={() => setAuthMode('login')} isDarkMode={isDarkMode} />
-          )}
-        </div>
+      {/* 카드 섹션 - 남은 공간에서 정중앙 정렬 */}
+      <div className="flex-1 flex flex-col justify-center pb-12 md:pb-20">
+        <div className={`relative w-full max-w-[1150px] min-h-[850px] mx-auto overflow-hidden rounded-[48px] border transition-all duration-500 shadow-2xl ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+          {/* ... 내부 섹션들 동일 ... */}
+          
+          {/* 왼쪽 섹션 (회원가입 & 비밀번호 찾기) */}
+          <div className={`absolute top-0 left-0 w-1/2 h-full transition-all duration-700 ease-in-out flex flex-col justify-center px-10 lg:px-20 ${isRightSide ? 'opacity-100 z-50' : 'opacity-0 z-10 pointer-events-none'}`}>
+            {authMode === 'signup' ? (
+              <Signup onSuccess={handleAuthSuccess} onSwitch={() => setAuthMode('login')} isDarkMode={isDarkMode} />
+            ) : (
+              <ForgotPassword onSwitch={() => setAuthMode('login')} isDarkMode={isDarkMode} />
+            )}
+          </div>
 
-        {/* 오른쪽 섹션 (로그인) */}
-        <div className={`absolute top-0 left-1/2 w-1/2 h-full transition-all duration-700 ease-in-out flex flex-col justify-center px-10 lg:px-20 ${isRightSide ? 'opacity-0 z-10 pointer-events-none' : 'opacity-100 z-50'}`}>
-          <Login 
-            onSuccess={handleAuthSuccess} 
-            onSwitchSignup={() => setAuthMode('signup')}
-            onSwitchForgot={() => setAuthMode('forgot')}
-            isDarkMode={isDarkMode} 
-            rememberMe={rememberMe} 
-            setRememberMe={setRememberMe} 
-          />
-        </div>
+          {/* 오른쪽 섹션 (로그인) */}
+          <div className={`absolute top-0 left-1/2 w-1/2 h-full transition-all duration-700 ease-in-out flex flex-col justify-center px-10 lg:px-20 ${isRightSide ? 'opacity-0 z-10 pointer-events-none' : 'opacity-100 z-50'}`}>
+            <Login 
+              onSuccess={handleAuthSuccess} 
+              onSwitchSignup={() => setAuthMode('signup')}
+              onSwitchForgot={() => setAuthMode('forgot')}
+              isDarkMode={isDarkMode} 
+              rememberMe={rememberMe} 
+              setRememberMe={setRememberMe} 
+            />
+          </div>
 
-        {/* 오버레이 */}
-        <div className={`absolute top-0 left-0 w-1/2 h-full overflow-hidden transition-all duration-700 ease-in-out z-[100] ${isRightSide ? 'translate-x-full' : 'translate-x-0'}`}>
-          <div className={`relative h-full w-[200%] transition-all duration-700 ease-in-out ${isRightSide ? '-translate-x-1/2' : 'translate-x-0'}`}>
-            <img className="w-full h-full absolute object-cover opacity-90" src="https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop" alt="Background" />
-            <div className="w-full h-full absolute mix-blend-multiply bg-indigo-700/20"></div>
+          {/* 오버레이 디자인 패널 */}
+          <div className={`absolute top-0 left-0 w-1/2 h-full overflow-hidden transition-all duration-700 ease-in-out z-[100] ${isRightSide ? 'translate-x-full' : 'translate-x-0'}`}>
+            <div className={`relative h-full w-[200%] transition-all duration-700 ease-in-out ${isRightSide ? '-translate-x-1/2' : 'translate-x-0'}`}>
+              <img className="w-full h-full absolute object-cover opacity-90" src="https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop" alt="Background" />
+              <div className="w-full h-full absolute mix-blend-multiply bg-indigo-700/20"></div>
 
-            {/* 로그인용 콘텐츠 (왼쪽 절반) */}
-            <div className={`absolute top-0 left-0 w-1/2 h-full p-16 flex flex-col justify-between items-start text-white transition-all duration-700 ${isRightSide ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-2xl flex justify-center items-center shadow-xl transform -rotate-6"><div className="w-6 h-6 bg-blue-600 rounded-md"></div></div>
-                <div className="text-2xl font-black tracking-tight">OneResume</div>
+              {/* 로그인용 오버레이 콘텐츠 */}
+              <div className={`absolute top-0 left-0 w-1/2 h-full p-16 flex flex-col justify-between items-start text-white transition-all duration-700 ${isRightSide ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex justify-center items-center shadow-xl transform -rotate-6"><div className="w-6 h-6 bg-blue-600 rounded-md"></div></div>
+                  <div className="text-2xl font-black tracking-tight">OneResume</div>
+                </div>
+                <div className="max-w-sm space-y-6">
+                  <div className="w-16 h-1.5 bg-white/40 rounded-full"></div>
+                  <h2 className="text-5xl font-extrabold leading-[1.2] tracking-tight break-keep" style={{ wordBreak: 'keep-all' }}>
+                    나를 증명하는<br/>
+                    가장 스마트한 방법.
+                  </h2>
+                  <p className="text-white/90 text-xl font-medium leading-relaxed break-keep" style={{ wordBreak: 'keep-all' }}>
+                    OneResume과 함께 당신의 커리어를<br/>
+                    정교하게 관리하고, 더 넓은 기회를 향해<br/>
+                    한 발짝 더 나아가세요.
+                  </p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md p-8 rounded-[32px] border border-white/20 w-full space-y-6">
+                  <div className="flex items-center gap-4 group"><div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">🔑</div><div className="flex flex-col"><span className="text-sm font-black uppercase tracking-widest text-white">Secure Access</span><span className="text-[11px] font-bold text-white/60">강력한 보안 기반의 데이터 관리</span></div></div>
+                  <div className="flex items-center gap-4 group"><div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">📊</div><div className="flex flex-col"><span className="text-sm font-black uppercase tracking-widest text-white">Insights</span><span className="text-[11px] font-bold text-white/60">나의 이력서 조회수 실시간 분석</span></div></div>
+                </div>
               </div>
-              <div className="max-w-sm space-y-6">
-                <div className="w-16 h-1.5 bg-white/40 rounded-full"></div>
-                <h2 className="text-5xl font-extrabold leading-[1.2] tracking-tight break-keep" style={{ wordBreak: 'keep-all' }}>
-                  나를 증명하는<br/>
-                  가장 스마트한 방법.
-                </h2>
-                <p className="text-white/90 text-xl font-medium leading-relaxed break-keep" style={{ wordBreak: 'keep-all' }}>
-                  OneResume과 함께 당신의 커리어를<br/>
-                  정교하게 관리하고, 더 넓은 기회를 향해<br/>
-                  한 발짝 더 나아가세요.
-                </p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md p-8 rounded-[32px] border border-white/20 w-full space-y-6">
-                <div className="flex items-center gap-4 group"><div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">🔑</div><div className="flex flex-col"><span className="text-sm font-black uppercase tracking-widest text-white">Secure Access</span><span className="text-[11px] font-bold text-white/60">강력한 보안 기반의 데이터 관리</span></div></div>
-                <div className="flex items-center gap-4 group"><div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">📊</div><div className="flex flex-col"><span className="text-sm font-black uppercase tracking-widest text-white">Insights</span><span className="text-[11px] font-bold text-white/60">나의 이력서 조회수 실시간 분석</span></div></div>
-              </div>
-            </div>
 
-            {/* 회원가입/비밀번호찾기 오버레이 콘텐츠 */}
-            <div className={`absolute top-0 right-0 w-1/2 h-full p-16 flex flex-col justify-between items-start text-white transition-all duration-700 ${isRightSide ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-2xl flex justify-center items-center shadow-xl transform -rotate-6"><div className="w-6 h-6 bg-blue-600 rounded-md"></div></div>
-                <div className="text-2xl font-black tracking-tight">OneResume</div>
-              </div>
-              <div className="max-w-sm space-y-6">
-                <div className="w-16 h-1.5 bg-white/40 rounded-full"></div>
-                <h2 className="text-5xl font-extrabold leading-[1.2] tracking-tight break-keep" style={{ wordBreak: 'keep-all' }}>
-                  {isForgot ? (
-                    <>걱정하지 마세요.<br/>금방 도와드릴게요.</>
-                  ) : (
-                    <>당신의 커리어를<br/>가장 완벽하게 보여주는 곳.</>
-                  )}
-                </h2>
-                <p className="text-white/90 text-xl font-medium leading-relaxed break-keep" style={{ wordBreak: 'keep-all' }}>
-                  {isForgot ? (
-                    <>메일을 통해 비밀번호 재설정 링크를<br/>보내드립니다. OneResume과 함께<br/>당신의 커리어를 다시 시작하세요.</>
-                  ) : (
-                    <>나만의 고유한 서브도메인으로<br/>경력을 통합하고, 당신의 전문성을<br/>명확하게 전달하세요.</>
-                  )}
-                </p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md p-8 rounded-[32px] border border-white/20 w-full space-y-6">
-                <div className="flex items-center gap-4 group"><div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">{isForgot ? "✉️" : "🌐"}</div><div className="flex flex-col"><span className="text-sm font-black uppercase tracking-widest text-white">{isForgot ? "Fast Recovery" : "Personal Domain"}</span><span className="text-[11px] font-bold text-white/60">{isForgot ? "가장 빠른 계정 복구 시스템" : "나만의 고유한 웹 주소 제공"}</span></div></div>
-                <div className="flex items-center gap-4 group"><div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">{isForgot ? "🛡️" : "🤖"}</div><div className="flex flex-col"><span className="text-sm font-black uppercase tracking-widest text-white">{isForgot ? "Safe Access" : "AI Resume Audit"}</span><span className="text-[11px] font-bold text-white/60">{isForgot ? "철저한 본인 확인 절차" : "Gemini 기반 실시간 이력서 분석"}</span></div></div>
+              {/* 회원가입/비밀번호찾기용 오버레이 콘텐츠 */}
+              <div className={`absolute top-0 right-0 w-1/2 h-full p-16 flex flex-col justify-between items-start text-white transition-all duration-700 ${isRightSide ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex justify-center items-center shadow-xl transform -rotate-6"><div className="w-6 h-6 bg-blue-600 rounded-md"></div></div>
+                  <div className="text-2xl font-black tracking-tight">OneResume</div>
+                </div>
+                <div className="max-w-sm space-y-6">
+                  <div className="w-16 h-1.5 bg-white/40 rounded-full"></div>
+                  <h2 className="text-5xl font-extrabold leading-[1.2] tracking-tight break-keep" style={{ wordBreak: 'keep-all' }}>
+                    {isForgot ? (
+                      <>걱정하지 마세요.<br/>금방 도와드릴게요.</>
+                    ) : (
+                      <>당신의 커리어를<br/>가장 완벽하게 보여주는 곳.</>
+                    )}
+                  </h2>
+                  <p className="text-white/90 text-xl font-medium leading-relaxed break-keep" style={{ wordBreak: 'keep-all' }}>
+                    {isForgot ? (
+                      <>메일을 통해 비밀번호 재설정 링크를<br/>보내드립니다. OneResume과 함께<br/>당신의 커리어를 다시 시작하세요.</>
+                    ) : (
+                      <>나만의 고유한 서브도메인으로<br/>경력을 통합하고, 당신의 전문성을<br/>명확하게 전달하세요.</>
+                    )}
+                  </p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md p-8 rounded-[32px] border border-white/20 w-full space-y-6">
+                  <div className="flex items-center gap-4 group"><div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">{isForgot ? "✉️" : "🌐"}</div><div className="flex flex-col"><span className="text-sm font-black uppercase tracking-widest text-white">{isForgot ? "Fast Recovery" : "Personal Domain"}</span><span className="text-[11px] font-bold text-white/60">{isForgot ? "가장 빠른 계정 복구 시스템" : "나만의 고유한 웹 주소 제공"}</span></div></div>
+                  <div className="flex items-center gap-4 group"><div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">{isForgot ? "🛡️" : "🤖"}</div><div className="flex flex-col"><span className="text-sm font-black uppercase tracking-widest text-white">{isForgot ? "Safe Access" : "AI Resume Audit"}</span><span className="text-[11px] font-bold text-white/60">{isForgot ? "철저한 본인 확인 절차" : "Gemini 기반 실시간 이력서 분석"}</span></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
+        </div>
       </div>
     </PageLayout>
   );

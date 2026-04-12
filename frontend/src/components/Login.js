@@ -2,13 +2,11 @@ import { API_BASE_URL } from "../config";
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useNavigate } from "react-router-dom";
 
 const Login = ({ onSuccess, onSwitchSignup, onSwitchForgot, isDarkMode, rememberMe, setRememberMe }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -17,14 +15,15 @@ const Login = ({ onSuccess, onSwitchSignup, onSwitchForgot, isDarkMode, remember
       const response = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
       const { user, token } = response.data;
 
+      // 토큰 저장 (기능 복구)
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('oneresume-token', token);
       
       toast.success(`${user.username}님, 반갑습니다`, { id: loading });
       
+      // 부모에게 성공 알림 (즉시 이동 처리됨)
       if (onSuccess) onSuccess(response.data);
-      if (user.isProfileComplete) navigate('/edit');
-      else navigate('/setup-profile');
+      
     } catch (err) {
       toast.error(err.response?.data?.message || "로그인 실패", { id: loading });
     }

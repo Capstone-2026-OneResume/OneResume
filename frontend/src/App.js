@@ -101,7 +101,7 @@ function App() {
           <Routes>
             {/* 각 페이지에 isDarkMode와 필요 시 toggleDarkMode 전달 */}
             <Route path="/" element={<AuthPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />
-												<Route path="/setup-profile" element={<SetupProfile isDarkMode={isDarkMode} />} />
+												<Route path="/setup-profile" element={<SetupProfile isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />
             <Route 
               path="/edit" 
               element={<EditPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} 
