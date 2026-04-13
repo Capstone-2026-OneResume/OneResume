@@ -8,7 +8,9 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  process.env.FRONTEND_URL,
   process.env.S3_BUCKET_NAME ? `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com` : null,
   process.env.S3_BUCKET_NAME && process.env.AWS_REGION ? `http://${process.env.S3_BUCKET_NAME}.s3-website-${process.env.AWS_REGION}.amazonaws.com` : null
 ].filter(Boolean);
@@ -18,28 +20,32 @@ const port = 5000;
 
 app.set('trust proxy', 1);
 
-// [Security] Helmet 적용
-// 기본적으로 XSS, 클릭재킹(Clickjacking) 등을 방어하는 헤더를 추가.
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
-
-// 2. CORS 설정
+// 1. CORS 설정 (가장 먼저 적용)
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    const isAllowed = allowedOrigins.some(allowed => origin === allowed || (allowed.includes('amazonaws.com') && origin.endsWith('amazonaws.com')));
+    // 허용 목록에 있거나 amazonaws.com으로 끝나는 도메인 허용
+    const isAllowed = allowedOrigins.some(allowed => 
+      origin === allowed || 
+      (allowed.includes('amazonaws.com') && origin.endsWith('amazonaws.com'))
+    );
     
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.log('CORS blocked for origin:', origin);
+      console.log('CORS 차단됨:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// 2. [Security] Helmet 적용
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 const getSafeAllowedOrigin = (req) => {
@@ -50,23 +56,22 @@ const getSafeAllowedOrigin = (req) => {
     return allowedOrigins[0];
 };
 
-// [Security] Rate Limiting 설정
+// 3. [Security] Rate Limiting 설정
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1분
-  max: 20, // 1분당 최대 요청 횟수
-		handler: (req, res) => {
+  max: 100, // 개발 편의를 위해 횟수 대폭 상향 (기존 20 -> 100)
+  handler: (req, res) => {
     const origin = getSafeAllowedOrigin(req);
     res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true'); // 인증 정보 포함 시 필수
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.status(429).json({
-      message: "너무 많은 요청이 감지되었습니다. 1분 후 다시 시도해주세요."
+      message: "너무 많은 요청이 감지되었습니다. 잠시 후 다시 시도해주세요."
     });
   },
-  standardHeaders: true, // 응답 헤더에 RateLimit 정보를 포함
-  legacyHeaders: false, // 이전 방식의 헤더는 사용 안 함
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// 모든 요청에 대해 리미터 적용
 app.use(limiter);
 
 // 미들웨어 설정

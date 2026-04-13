@@ -5,7 +5,7 @@ import ResumePreview from "../components/ResumePreview";
 import toast from "react-hot-toast";
 import useResume from "../hooks/useResume";
 import PageLayout from "../components/PageLayout";
-import ThemeToggle from "../components/ThemeToggle"; // 상단 임포트 완료
+import ThemeToggle from "../components/ThemeToggle";
 
 function EditPage({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
@@ -14,6 +14,26 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
   const [leftWidth, setLeftWidth] = useState(50);
   const [isResizing, setIsResizing] = useState(false);
   const [focusedPage, setFocusedPage] = useState(null);
+  const [windowSize, setWindowSize] = useState({ 
+    width: window.innerWidth, 
+    height: window.innerHeight 
+  });
+
+  // 리사이즈 최적화 (Throttle/Debounce 대신 requestAnimationFrame 활용으로 부드럽게)
+  useEffect(() => {
+    let animationFrameId;
+    const handleResize = () => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(() => {
+        setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
 
   const handleMouseMove = useCallback((e) => {
     if (!isResizing) return;
@@ -152,41 +172,69 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     </PageLayout>
   );
 
-  const baseScale = focusedPage ? 1.0 : (window.innerWidth > 1536 ? 0.52 : (window.innerWidth > 1280 ? 0.48 : 0.42));
-  const transformOrigin = focusedPage ? "center center" : "top center";
-  const marginTop = focusedPage ? "0" : "40px";
+  // 화면 높이에 따른 동적 스케일링 (이력서 미리보기용)
+  const getScale = () => {
+    const headerHeight = 56;
+    const a4HeightPx = 1122.52; // 297mm를 96dpi 기준으로 환산한 정밀한 높이
+
+    if (focusedPage) {
+      const padding = 20; // 여백을 최소화(상하 10px씩)
+      const availableHeight = windowSize.height - headerHeight - padding;
+      // 화면 높이에 A4가 딱 맞게 차도록 계산
+      return availableHeight / a4HeightPx;
+    }
+    
+    // 일반 그리드 뷰 배율
+    if (windowSize.height < 950) return 0.38; 
+    if (windowSize.width > 1536) return 0.54;
+    if (windowSize.width > 1280) return 0.50;
+    return 0.44;
+  };
+
+  // 입력 폼 전용 줌 배율 (scale 대신 zoom 사용으로 훨씬 부드러움)
+  const getFormZoom = () => {
+    if (windowSize.height >= 1000) return 1.0;
+    if (windowSize.height < 650) return 0.75;
+    if (windowSize.height < 800) return 0.82;
+    if (windowSize.height < 950) return 0.90;
+    return 1.0;
+  };
+
+  const baseScale = getScale();
+  const formZoom = getFormZoom();
+  const isLaptop = windowSize.height < 950;
+  const currentMarginTop = isLaptop ? 20 : 40;
 
   return (
     <PageLayout isDarkMode={isDarkMode} noPadding={true}>
-      <header className={`h-[72px] min-h-[72px] px-6 border-b flex items-center justify-between z-20 transition-colors duration-300 print:hidden ${
+      <header className={`h-14 min-h-[56px] px-6 border-b flex items-center justify-between z-20 transition-colors duration-300 print:hidden ${
         isDarkMode ? 'bg-zinc-900/80 border-zinc-800 backdrop-blur-md' : 'bg-white/80 border-zinc-200 backdrop-blur-md'
       }`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-            <span className="font-black text-xl">O</span>
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg">
+            <span className="font-black text-base">O</span>
           </div>
-          <h1 className={`text-xl font-black tracking-tighter hidden md:block ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>OneResume</h1>
+          <h1 className={`text-base font-black tracking-tighter hidden md:block ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>OneResume</h1>
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          {/* 공통 ThemeToggle 적용 */}
           <ThemeToggle isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-          
-          <div className="h-6 w-[1px] bg-zinc-700/20 mx-1 hidden sm:block"></div>
-          <button onClick={copyShareLink} className="bg-blue-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">링크 복사</button>
-          <button onClick={downloadPDF} className="bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">PDF</button>
-          <button onClick={handleLogout} className="bg-red-500 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all active:scale-95">로그아웃</button>
+          <div className="h-5 w-[1px] bg-zinc-700/20 mx-1 hidden sm:block"></div>
+          <button onClick={copyShareLink} className="bg-blue-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all active:scale-95">링크 복사</button>
+          <button onClick={downloadPDF} className="bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all active:scale-95">PDF</button>
+          <button onClick={handleLogout} className="bg-red-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all active:scale-95">로그아웃</button>
         </div>
       </header>
 
-      <main className="h-[calc(100vh-72px)] flex overflow-hidden w-full relative">
+      <main className="h-[calc(100vh-56px)] flex overflow-hidden w-full relative">
         <div 
           style={{ width: `${leftWidth}%` }}
-          className={`h-full overflow-y-auto custom-scrollbar p-6 lg:p-10 border-r transition-none ${
+          className={`h-full overflow-y-auto custom-scrollbar p-4 lg:p-6 border-r transition-none ${
             isDarkMode ? 'border-zinc-800 bg-zinc-900/30' : 'border-zinc-200 bg-gray-50/30'
           }`}
         >
-          <div className="max-w-[720px] mx-auto pb-20">
+          {/* Zoom을 사용하면 스케일링으로 인한 레이아웃 깨짐 없이 부드럽게 조절됨 */}
+          <div className="max-w-[720px] mx-auto pb-10" style={{ zoom: formZoom }}>
             <ResumeForm
               formData={formData}
               handleChange={handleChange}
@@ -198,6 +246,7 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
               handleDragEnd={handleDragEnd}
               handleImageUpload={handleImageUpload}
               isDarkMode={isDarkMode}
+              isCompact={isLaptop || formZoom < 1.0}
             />
           </div>
         </div>
@@ -209,56 +258,63 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
 
         <div 
           style={{ width: `${100 - leftWidth}%` }}
-          className={`hidden lg:flex h-full ${focusedPage ? 'overflow-hidden' : 'overflow-y-auto'} overflow-x-hidden custom-scrollbar relative items-start justify-center transition-none ${
+          className={`hidden lg:flex h-full overflow-hidden custom-scrollbar relative items-center justify-center transition-none ${
             isDarkMode ? 'bg-[#09090b]' : 'bg-[#f4f4f5]'
           }`}
         >
-          {isResizing && <div className="absolute inset-0 z-40" />}
+          {/* 그리드 뷰일 때는 items-start, 확대 시에는 items-center로 정확한 중앙 정렬 */}
+          <div className={`w-full h-full flex justify-center items-start ${focusedPage ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
+            {isResizing && <div className="absolute inset-0 z-40" />}
 
-          {focusedPage && (
-            <>
-              <button onClick={handlePrevPage} className="absolute left-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90">
-                <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all" />
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:-translate-x-0.5 transition-all"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            {focusedPage && (
+              <>
+                <button onClick={handlePrevPage} className="absolute left-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90">
+                  <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all" />
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:-translate-x-0.5 transition-all"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <button onClick={handleNextPage} className="absolute right-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90">
+                  <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all" />
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </>
+            )}
+
+            {focusedPage && (
+              <button onClick={() => setFocusedPage(null)} className="absolute right-8 top-8 w-12 h-12 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90">
+                <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-red-500/20 group-hover:border-red-500/30 transition-all" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-red-400 transition-all"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
-              <button onClick={handleNextPage} className="absolute right-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90">
-                <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all" />
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            )}
+
+            {focusedPage && (
+              <button onClick={() => setFocusedPage(null)} className="absolute bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full flex items-center gap-2 group z-50 transition-all duration-500 hover:scale-105 active:scale-95 shadow-2xl">
+                <div className="absolute inset-0 bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-full group-hover:bg-zinc-800 transition-all" />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-blue-400"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <span className="relative z-10 text-white font-bold text-sm tracking-tight">그리드 뷰</span>
               </button>
-            </>
-          )}
+            )}
 
-          {focusedPage && (
-            <button onClick={() => setFocusedPage(null)} className="absolute right-8 top-8 w-12 h-12 rounded-full flex items-center justify-center group z-50 transition-all duration-300 active:scale-90">
-              <div className="absolute inset-0 bg-zinc-800/20 backdrop-blur-md border border-white/10 rounded-full group-hover:bg-red-500/20 group-hover:border-red-500/30 transition-all" />
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-white/50 group-hover:text-red-400 transition-all"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-          )}
-
-          {focusedPage && (
-            <button onClick={() => setFocusedPage(null)} className="absolute bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full flex items-center gap-2 group z-50 transition-all duration-500 hover:scale-105 active:scale-95 shadow-2xl">
-              <div className="absolute inset-0 bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-full group-hover:bg-zinc-800 transition-all" />
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 text-blue-400"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-              <span className="relative z-10 text-white font-bold text-sm tracking-tight">그리드 뷰</span>
-            </button>
-          )}
-
-          <div 
-            className="transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu flex items-center justify-center"
-            style={{ 
-              transform: `scale(${baseScale})`, 
-              transformOrigin: transformOrigin,
-              marginTop: marginTop
-            }}
-          >
-            <ResumePreview 
-              formData={formData} 
-              ref={resumeRef} 
-              isDarkMode={isDarkMode} 
-              paneWidth={100 - leftWidth}
-              focusedPage={focusedPage}
-              setFocusedPage={setFocusedPage}
-            />
+            <div 
+              className="transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu flex items-center justify-center shrink-0"
+              style={{ 
+                transform: `scale(${baseScale})`, 
+                transformOrigin: 'top center', // 기준점을 위쪽으로 고정하여 팅김 방지
+                marginTop: `${currentMarginTop}px`,
+                marginBottom: '80px'
+              }}
+            >
+              <ResumePreview 
+                formData={formData} 
+                ref={resumeRef} 
+                isDarkMode={isDarkMode} 
+                paneWidth={100 - leftWidth}
+                focusedPage={focusedPage}
+                setFocusedPage={setFocusedPage}
+                containerHeight={windowSize.height - 56} // 정확한 뷰포트 높이 전달
+                scale={baseScale} // 현재 스케일 전달
+                marginTop={currentMarginTop} // 여백 값 전달
+              />
+            </div>
           </div>
         </div>
       </main>

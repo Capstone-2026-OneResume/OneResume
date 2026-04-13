@@ -1,7 +1,16 @@
 import React from "react";
 import { GitHubCalendar } from "react-github-calendar";
 
-const ResumePreview = React.forwardRef(({ formData, isDarkMode, paneWidth = 50, focusedPage, setFocusedPage }, ref) => {
+const ResumePreview = React.forwardRef(({ 
+  formData, 
+  isDarkMode, 
+  paneWidth = 50, 
+  focusedPage, 
+  setFocusedPage,
+  containerHeight = 0,
+  scale = 1.0,
+  marginTop = 0
+}, ref) => {
   
   const getGithubUsername = (url) => {
     if (!url) return null;
@@ -203,12 +212,17 @@ const ResumePreview = React.forwardRef(({ formData, isDarkMode, paneWidth = 50, 
     const ty = (row * (pageH + gap)) + (pageH / 2);
     
     const canvasCenterX = (cols * pageW + (cols - 1) * gap) / 2;
-    const canvasCenterY = (rows * pageH + (rows - 1) * gap) / 2;
 
     translateX = `${canvasCenterX - tx}mm`;
-    const yOffset = cols === 4 ? -10 : 142;
-    translateY = `${(canvasCenterY - ty) - yOffset}mm`; 
-    zoomScale = 1.0;
+    
+    // 수학적 정밀 계산: 컨테이너 중앙(viewportCenterInMm)에서 페이지 중앙(ty)까지의 거리 계산
+    // 1mm = 3.7795275591px (96dpi 기준)
+    const factor = 3.7795275591;
+    const viewportCenterInMm = (containerHeight / 2) / (scale * factor);
+    const topMarginInMm = marginTop / (scale * factor);
+    
+    translateY = `${viewportCenterInMm - ty - topMarginInMm}mm`; 
+    zoomScale = 1.0; 
   }
 
   return (
