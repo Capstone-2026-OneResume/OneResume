@@ -9,6 +9,9 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB 용량 제한
 });
 
+// [커리어넷 검색]
+router.get('/search', resumeController.searchCareerNet);
+
 // [이미지 업로드]
 router.post('/upload', upload.single('profileImage'), resumeController.uploadImage);
 

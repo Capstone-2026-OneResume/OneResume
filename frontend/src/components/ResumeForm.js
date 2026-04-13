@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import DaumPostcode from "react-daum-postcode";
 
 const ResumeForm = ({
   formData,
@@ -16,6 +17,59 @@ const ResumeForm = ({
 }) => {
   // 현재 활성화된 탭 상태 (기본값: 'basic')
   const [activeTab, setActiveTab] = useState('basic');
+  const [isAddressOpen, setIsAddressOpen] = useState(false);
+  const [schoolResults, setSchoolResults] = useState([]);
+  const [majorResults, setMajorResults] = useState([]);
+  const [showSchoolList, setShowSchoolList] = useState(false);
+  const [showMajorList, setShowMajorList] = useState(false);
+
+  const handleAddressComplete = (data) => {
+    let fullAddress = data.address;
+    let extraAddress = "";
+
+    if (data.addressType === "R") {
+      if (data.bname !== "") extraAddress += data.bname;
+      if (data.buildingName !== "") extraAddress += extraAddress !== "" ? `, ${data.buildingName}` : data.buildingName;
+      fullAddress += extraAddress !== "" ? ` (${extraAddress})` : "";
+    }
+
+    handleChange({ target: { name: "address", value: fullAddress } });
+    setIsAddressOpen(false);
+  };
+
+  // 학교 검색
+  const searchSchool = async (keyword) => {
+    if (!keyword || keyword.length < 2) {
+      setSchoolResults([]);
+      return;
+    }
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/resume/search?type=SCHOOL&keyword=${encodeURIComponent(keyword)}`);
+      const data = await response.json();
+      const list = data.dataSearch?.content || [];
+      setSchoolResults(list);
+      setShowSchoolList(true);
+    } catch (error) {
+      console.error("학교 검색 에러:", error);
+    }
+  };
+
+  // 전공 검색
+  const searchMajor = async (keyword) => {
+    if (!keyword || keyword.length < 2) {
+      setMajorResults([]);
+      return;
+    }
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/resume/search?type=MAJOR&keyword=${encodeURIComponent(keyword)}`);
+      const data = await response.json();
+      const list = data.dataSearch?.content || [];
+      setMajorResults(list);
+      setShowMajorList(true);
+    } catch (error) {
+      console.error("전공 검색 에러:", error);
+    }
+  };
 
   const theme = {
     formBg: isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-white border-zinc-100",
@@ -79,11 +133,11 @@ const ResumeForm = ({
 
             <div className={`grid grid-cols-12 ${isCompact ? 'gap-4' : 'gap-6'}`}>
               <div className="col-span-4 flex flex-col gap-1.5">
-                <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>이름</label>
+                <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>이름</label>
                 <input type="text" name="username" value={formData.username} onChange={handleChange} className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
               </div>
               <div className="col-span-3 flex flex-col gap-1.5">
-                <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>성별</label>
+                <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>성별</label>
                 <div className={`relative flex p-1 rounded-2xl border-2 transition-all ${theme.inputBg} ${isCompact ? 'h-[44px]' : 'h-[53.6px]'}`}>
                   <div 
                     className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-md ${
@@ -97,7 +151,7 @@ const ResumeForm = ({
                 </div>
               </div>
               <div className="col-span-5 flex flex-col gap-1.5">
-                <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>이메일</label>
+                <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>이메일</label>
                 <input type="email" name="email" value={formData.email} onChange={handleChange} className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
               </div>
             </div>
@@ -105,28 +159,73 @@ const ResumeForm = ({
             <div className={`grid grid-cols-2 ${isCompact ? 'gap-4' : 'gap-6'}`}>
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between pl-1">
-                  <label className={`text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>나이</label>
+                  <label className={`text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>나이</label>
                   <label className="flex items-center gap-1.5 cursor-pointer group">
                     <input type="checkbox" name="useInternationalAge" checked={formData.useInternationalAge || false} onChange={handleChange} className="w-3 h-3 rounded border-zinc-600 bg-zinc-700 text-blue-600 transition-all" />
-                    <span className={`text-[9px] font-bold ${isDarkMode ? 'text-zinc-500 group-hover:text-zinc-300' : 'text-zinc-400 group-hover:text-zinc-600'} transition-colors`}>만 나이</span>
+                    <span className={`text-[11px] font-black ${isDarkMode ? 'text-zinc-500 group-hover:text-zinc-300' : 'text-zinc-400 group-hover:text-zinc-600'} transition-colors`}>만 나이</span>
                   </label>
                 </div>
                 <input type="number" name="age" value={formData.age} onChange={handleChange} placeholder="숫자만" className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>전화번호</label>
+                <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>전화번호</label>
                 <input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="010-0000-0000" className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
               </div>
             </div>
+
             <div className="flex flex-col gap-1.5">
-              <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>서브도메인</label>
+              <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>거주지 주소</label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address || ""}
+                  readOnly
+                  onClick={() => setIsAddressOpen(true)}
+                  placeholder="주소 검색을 클릭하세요"
+                  className={`flex-1 px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 cursor-pointer ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsAddressOpen(true)}
+                  className={`bg-zinc-800 dark:bg-zinc-700 text-white font-bold rounded-2xl transition-all shadow-lg active:scale-95 ${isCompact ? 'px-4 py-2 text-[10px]' : 'px-6 py-3.5 text-xs'}`}
+                >
+                  주소 검색
+                </button>
+              </div>
+              <input
+                type="text"
+                name="addressDetail"
+                value={formData.addressDetail || ""}
+                onChange={handleChange}
+                placeholder="상세주소 (건물명, 동, 호수 등)"
+                className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`}
+              />
+              {isAddressOpen && (                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                  <div className={`relative w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl ${isDarkMode ? 'bg-zinc-800' : 'bg-white'}`}>
+                    <div className="flex items-center justify-between p-4 border-b border-zinc-700/20">
+                      <h3 className={`font-bold ${theme.titleText}`}>주소 검색</h3>
+                      <button onClick={() => setIsAddressOpen(false)} className="text-zinc-500 hover:text-red-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <DaumPostcode onComplete={handleAddressComplete} style={{ height: '450px' }} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>서브도메인</label>
               <div className="flex items-center">
                 <input type="text" name="subdomain" value={formData.subdomain} onChange={handleChange} className={`flex-1 px-5 border-2 rounded-l-2xl outline-none transition-all focus:ring-2 border-r-0 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
                 <span className={`px-5 font-bold text-sm border-2 border-l-0 ${isDarkMode ? 'bg-zinc-700 border-zinc-600 text-zinc-400' : 'bg-gray-200 border-transparent text-zinc-500'} ${isCompact ? 'py-2.5' : 'py-3.5'}`}>.oneresume.com</span>
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>한 줄 소개</label>
+              <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>한 줄 소개</label>
               <textarea name="bio" value={formData.bio} onChange={handleChange} rows={isCompact ? "2" : "3"} placeholder="나를 가장 잘 표현하는 문장을 적어주세요." className={`w-full px-5 border-2 rounded-2xl outline-none transition-all focus:ring-2 resize-none ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
             </div>
           </div>
@@ -136,7 +235,7 @@ const ResumeForm = ({
         {activeTab === 'links' && (
           <div className={`${isCompact ? 'space-y-5' : 'space-y-8'} animate-fade-in`}>
             <div className="flex flex-col gap-1.5">
-              <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>GitHub 연동</label>
+              <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>GitHub 연동</label>
               <div className="flex gap-3">
                 <input type="text" name="githubUrl" value={formData.githubUrl} onChange={handleChange} placeholder="GitHub URL 또는 아이디" className={`flex-1 px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
                 {formData.githubUrl && (
@@ -145,7 +244,7 @@ const ResumeForm = ({
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>기술 블로그</label>
+              <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>기술 블로그</label>
               <input type="text" name="blogUrl" value={formData.blogUrl} onChange={handleChange} placeholder="https://velog.io/@username" className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
             </div>
           </div>
@@ -154,21 +253,88 @@ const ResumeForm = ({
         {activeTab === 'edu' && (
           <div className={`${isCompact ? 'space-y-5' : 'space-y-8'} animate-fade-in`}>
             <div className={`grid grid-cols-2 ${isCompact ? 'gap-4' : 'gap-6'}`}>
-              <div className="flex flex-col gap-1.5">
-                <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>학교</label>
-                <input type="text" name="school" value={formData.school} onChange={handleChange} className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
+              <div className="flex flex-col gap-1.5 relative">
+                <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>학교</label>
+                <input 
+                  type="text" 
+                  name="school" 
+                  value={formData.school} 
+                  onChange={(e) => {
+                    handleChange(e);
+                    searchSchool(e.target.value);
+                  }} 
+                  onBlur={() => setTimeout(() => setShowSchoolList(false), 200)}
+                  onFocus={() => formData.school.length >= 2 && setShowSchoolList(true)}
+                  autoComplete="off"
+                  placeholder="학교명 입력 (2자 이상)"
+                  className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} 
+                />
+                {showSchoolList && (
+                  <div className={`absolute top-[calc(100%+4px)] left-0 right-0 z-50 max-h-48 overflow-y-auto rounded-2xl border shadow-xl custom-scrollbar ${isDarkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-zinc-200'}`}>
+                    {schoolResults.length > 0 ? (
+                      schoolResults.map((item, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => {
+                            handleChange({ target: { name: 'school', value: item.schoolName } });
+                            setShowSchoolList(false);
+                          }}
+                          className={`px-5 py-3 text-sm cursor-pointer transition-colors ${isDarkMode ? 'hover:bg-zinc-700 text-zinc-300' : 'hover:bg-blue-50 text-zinc-700'}`}
+                        >
+                          <div className="font-bold">{item.schoolName}</div>
+                          <div className="text-[10px] opacity-60">{item.region} | {item.campusName}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-5 py-4 text-xs text-center opacity-50">검색 결과가 없습니다.</div>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>전공</label>
-                <input type="text" name="major" value={formData.major} onChange={handleChange} className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
+              <div className="flex flex-col gap-1.5 relative">
+                <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>전공</label>
+                <input 
+                  type="text" 
+                  name="major" 
+                  value={formData.major} 
+                  onChange={(e) => {
+                    handleChange(e);
+                    searchMajor(e.target.value);
+                  }} 
+                  onBlur={() => setTimeout(() => setShowMajorList(false), 200)}
+                  onFocus={() => formData.major.length >= 2 && setShowMajorList(true)}
+                  autoComplete="off"
+                  placeholder="전공명 입력 (2자 이상)"
+                  className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} 
+                />
+                {showMajorList && (
+                  <div className={`absolute top-[calc(100%+4px)] left-0 right-0 z-50 max-h-48 overflow-y-auto rounded-2xl border shadow-xl custom-scrollbar ${isDarkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-zinc-200'}`}>
+                    {majorResults.length > 0 ? (
+                      majorResults.map((item, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => {
+                            handleChange({ target: { name: 'major', value: item.majorName } });
+                            setShowMajorList(false);
+                          }}
+                          className={`px-5 py-3 text-sm cursor-pointer transition-colors ${isDarkMode ? 'hover:bg-zinc-700 text-zinc-300' : 'hover:bg-blue-50 text-zinc-700'}`}
+                        >
+                          <div className="font-bold">{item.majorName}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-5 py-4 text-xs text-center opacity-50">검색 결과가 없습니다.</div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>학점 (GPA)</label>
+              <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>학점 (GPA)</label>
               <input type="text" name="gpa" value={formData.gpa} onChange={handleChange} placeholder="4.5 / 4.5" className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className={`pl-1 text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>기술 스택</label>
+              <label className={`pl-1 text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>기술 스택</label>
               <input type="text" name="skills" value={formData.skills} onChange={handleChange} placeholder="React, Node.js" className={`w-full px-5 rounded-2xl border-2 outline-none transition-all focus:ring-2 ${theme.inputBg} ${isCompact ? 'py-2.5 text-sm' : 'py-3.5'}`} />
             </div>
           </div>
@@ -177,7 +343,7 @@ const ResumeForm = ({
         {activeTab === 'projects' && (
           <div className={`${isCompact ? 'space-y-4' : 'space-y-6'} animate-fade-in`}>
             <div className="flex items-center justify-between mb-2 px-1">
-              <h3 className={`text-[10px] font-bold uppercase tracking-widest ${theme.labelText}`}>프로젝트 ({formData.projects.length})</h3>
+              <h3 className={`text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>프로젝트 ({formData.projects.length})</h3>
               <button type="button" onClick={addProject} className="text-blue-500 text-[10px] font-black hover:underline">+ 추가</button>
             </div>
             

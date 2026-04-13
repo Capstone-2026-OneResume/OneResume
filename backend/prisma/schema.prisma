@@ -26,6 +26,8 @@ model User {
 		age        					Int?     // 나이
 		gender      				String?  // 성별
 		phone      					String?  // 전화번호
+		address      				String?  // 거주지 주소
+		addressDetail				String?  // 상세 주소 (동, 호수 등)
 		isProfileComplete Boolean @default(false) // 온보딩 완료 여부
 
 // 이메일 인증 관련

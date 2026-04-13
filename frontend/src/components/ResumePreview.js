@@ -1,5 +1,25 @@
 import React from "react";
 import { GitHubCalendar } from "react-github-calendar";
+import { Mail, Phone, MapPin, User, Globe } from "lucide-react";
+
+// Lucide에서 Github 아이콘을 찾을 수 없는 경우를 위한 수동 정의
+const GithubIcon = ({ size = 14, className = "" }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+    <path d="M9 18c-4.51 2-5-2-7-2" />
+  </svg>
+);
 
 const ResumePreview = React.forwardRef(({ 
   formData, 
@@ -32,6 +52,7 @@ const ResumePreview = React.forwardRef(({
     sectionTitle: isDarkMode ? "text-zinc-200 border-zinc-700" : "text-zinc-800 border-zinc-800",
     textMain: isDarkMode ? "text-zinc-200" : "text-zinc-800",
     textSub: isDarkMode ? "text-zinc-400" : "text-zinc-600",
+    infoIcon: isDarkMode ? "text-zinc-500" : "text-zinc-400",
     skillBg: isDarkMode ? "bg-zinc-700 text-zinc-200" : "bg-zinc-100 text-zinc-700",
     boxBg: isDarkMode ? "bg-zinc-900/50 border-zinc-700" : "bg-gray-50 border-zinc-200",
     timelineLine: isDarkMode ? "border-zinc-700" : "border-zinc-300",
@@ -65,60 +86,90 @@ const ResumePreview = React.forwardRef(({
   const pages = [];
   pages.push({ id: 1, content: (
     <>
-      <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
-      <div className={`border-b-2 pb-8 mb-10 text-center ${theme.divider}`}>
-        {formData.profileImageUrl && (
-          <div className="flex justify-center mb-8">
-            <img src={formData.profileImageUrl} alt="프로필" className="w-32 h-32 rounded-full object-cover border-4 border-zinc-200 shadow-lg" />
+      <div className="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
+      <div className={`border-b-2 pb-10 mb-10 ${theme.divider}`}>
+        <div className="flex justify-between items-start mb-8">
+          <div className="flex-1">
+            <h2 className={`text-5xl font-black mb-3 tracking-tighter ${theme.name}`}>{formData.username || "이름 없음"}</h2>
+            <p className={`text-xl font-bold mb-6 ${theme.bio}`}>{formData.bio || "한 줄 소개가 없습니다."}</p>
+            
+            <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+              {formData.email && (
+                <div className="flex items-center gap-2">
+                  <Mail size={14} className={theme.infoIcon} />
+                  <span className={`text-sm font-bold ${theme.textMain}`}>{formData.email}</span>
+                </div>
+              )}
+              {formData.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone size={14} className={theme.infoIcon} />
+                  <span className={`text-sm font-bold ${theme.textMain}`}>{formData.phone}</span>
+                </div>
+              )}
+              {formData.address && (
+                <div className="flex items-center gap-2 col-span-2">
+                  <MapPin size={14} className={theme.infoIcon} />
+                  <span className={`text-sm font-bold ${theme.textMain}`}>
+                    {formData.address}
+                    {formData.addressDetail && ` ${formData.addressDetail}`}
+                  </span>
+                </div>
+              )}
+              {(formData.age || formData.gender) && (
+                <div className="flex items-center gap-2">
+                  <User size={14} className={theme.infoIcon} />
+                  <span className={`text-sm font-bold ${theme.textMain}`}>
+                    {formData.age ? (formData.useInternationalAge ? `만 ${formData.age}세` : `${formData.age}세`) : ""}
+                    {formData.gender && ` (${formData.gender === 'male' ? '남' : '여'})`}
+                  </span>
+                </div>
+              )}
+              {formData.githubUrl && (
+                <div className="flex items-center gap-2">
+                  <GithubIcon size={14} className={theme.infoIcon} />
+                  <a href={formData.githubUrl} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick} className={`text-sm font-bold hover:underline ${theme.link}`}>GitHub</a>
+                </div>
+              )}
+              {formData.blogUrl && (
+                <div className="flex items-center gap-2">
+                  <Globe size={14} className={theme.infoIcon} />
+                  <a href={formData.blogUrl} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick} className={`text-sm font-bold hover:underline ${theme.link}`}>Blog</a>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-        <h2 className={`text-4xl font-black mb-2 ${theme.name}`}>{formData.username || "이름 없음"}</h2>
-        <p className={`text-lg font-medium mb-4 ${theme.bio}`}>{formData.bio}</p>
-        <div className={`flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs font-bold ${theme.textSub}`}>
-          {formData.email && <span>{formData.email}</span>}
-          {formData.phone && (
-            <div className="flex items-center gap-4">
-              <span className="opacity-30">|</span>
-              <span>{formData.phone}</span>
-            </div>
-          )}
-          {formData.age && (
-            <div className="flex items-center gap-4">
-              <span className="opacity-30">|</span>
-              <span>
-                {formData.useInternationalAge ? `만 ${formData.age}세` : `${formData.age}세`}
-                {formData.gender && ` (${formData.gender === 'male' ? '남' : '여'})`}
-              </span>
-            </div>
-          )}          {formData.githubUrl && (
-            <div className="flex items-center gap-4">
-              <span className="opacity-30">|</span>
-              <a href={formData.githubUrl} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick} className={`hover:underline ${theme.link}`}>GitHub</a>
-            </div>
-          )}
-          {formData.blogUrl && (
-            <div className="flex items-center gap-4">
-              <span className="opacity-30">|</span>
-              <a href={formData.blogUrl} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick} className={`hover:underline ${theme.link}`}>Blog</a>
+          {formData.profileImageUrl && (
+            <div className="ml-8 shrink-0">
+              <img src={formData.profileImageUrl} alt="프로필" className="w-36 h-44 object-cover rounded-2xl shadow-xl border-2 border-zinc-100" />
             </div>
           )}
         </div>
-        </div>      <section className="mb-10">
-        <h3 className={`text-xs uppercase tracking-widest font-black mb-4 border-b-2 pb-1 ${theme.sectionTitle}`}>Education</h3>
-        <div className="flex justify-between items-end">
-          <div><p className={`text-xl font-bold ${theme.textMain}`}>{formData.school}</p><p className={`text-base font-medium ${theme.textSub}`}>{formData.major}</p></div>
-          {formData.gpa && <p className="font-bold text-blue-500">GPA: {formData.gpa}</p>}
+      </div>
+
+      <section className="mb-12">
+        <h3 className={`text-sm uppercase tracking-widest font-black mb-5 border-b-2 pb-1 inline-block ${theme.sectionTitle}`}>Education</h3>
+        <div className="flex justify-between items-start mt-2">
+          <div>
+            <p className={`text-2xl font-black ${theme.textMain}`}>{formData.school || "학교 정보 없음"}</p>
+            <p className={`text-lg font-bold mt-1 ${theme.textSub}`}>{formData.major}</p>
+          </div>
+          {formData.gpa && (
+            <div className={`px-4 py-2 rounded-xl border-2 font-black text-blue-600 ${isDarkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
+              GPA: {formData.gpa}
+            </div>
+          )}
         </div>
       </section>
+
       <section>
-        <h3 className={`text-xs uppercase tracking-widest font-black mb-4 border-b-2 pb-1 ${theme.sectionTitle}`}>Skills</h3>
-        <div className="flex flex-wrap gap-2">
-          {formData.skills?.split(",").map((s, i) => (
-            <span key={i} className={`px-3 py-1 rounded-full text-xs font-bold ${theme.skillBg}`}>{s.trim()}</span>
-          ))}
+        <h3 className={`text-sm uppercase tracking-widest font-black mb-5 border-b-2 pb-1 inline-block ${theme.sectionTitle}`}>Technical Skills</h3>
+        <div className="flex flex-wrap gap-2.5 mt-2">
+          {formData.skills ? formData.skills.split(",").map((s, i) => (
+            <span key={i} className={`px-4 py-1.5 rounded-xl text-sm font-black transition-all ${theme.skillBg} hover:scale-105`}>{s.trim()}</span>
+          )) : <p className="text-sm opacity-40">기술 스택을 입력해주세요.</p>}
         </div>
       </section>
-      <div className="absolute bottom-4 right-8 text-[10px] opacity-30 font-bold tracking-tighter italic">PAGE 01</div>
+      <div className="absolute bottom-8 right-10 text-[10px] opacity-30 font-bold tracking-tighter italic">PAGE 01</div>
     </>
   )});
 

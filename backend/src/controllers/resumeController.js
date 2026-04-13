@@ -1,6 +1,35 @@
+const axios = require('axios');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const prisma = require('../config/prisma');
 const s3 = require('../config/s3');
+
+// 커리어넷 API 키 (백엔드에서 관리)
+const CAREERNET_API_KEY = "363e75e925916a9a7a13c31671239c89";
+
+// [0] 커리어넷 학교/전공 검색 프록시 API
+exports.searchCareerNet = async (req, res) => {
+    try {
+        const { type, keyword } = req.query; // type: SCHOOL or MAJOR
+        console.log(`🔍 [CareerNet Search] Type: ${type}, Keyword: ${keyword}`);
+
+        if (!keyword || keyword.length < 2) {
+            return res.status(400).json({ message: "검색어는 2자 이상 입력해주세요." });
+        }
+
+        const url = `https://www.career.go.kr/cnet/openapi/getOpenApi?apiKey=${CAREERNET_API_KEY}&svcType=api&svcCode=${type}&contentType=json&gubun=univ_list&${type === 'SCHOOL' ? 'searchSchulNm' : 'searchMajorNm'}=${encodeURIComponent(keyword)}`;
+        
+        console.log(`🔗 Request URL: ${url}`);
+        const response = await axios.get(url);
+        
+        // 데이터 구조 로깅 (어떤 필드가 오는지 확인)
+        console.log("📦 Response Data Summary:", JSON.stringify(response.data).substring(0, 200) + "...");
+
+        res.status(200).json(response.data);
+    } catch (error) {
+        console.error("❌ 커리어넷 API 호출 에러:", error.response?.data || error.message);
+        res.status(500).json({ message: "커리어넷 서버와 통신 중 오류가 발생했습니다." });
+    }
+};
 
 // [1] 프로필 이미지 S3 직접 업로드 API
 exports.uploadImage = async (req, res) => {
@@ -67,7 +96,7 @@ exports.saveResume = async (req, res) => {
         // 프론트엔드에서 보낸 데이터 구조 분해 할당
         const {
             username, email, subdomain, bio, githubUrl, blogUrl, profileImageUrl,
-            age, gender, phone,
+            age, gender, phone, address, addressDetail,
             resumeTitle, school, major, gpa, skills, projects
         } = req.body;
 
@@ -116,7 +145,9 @@ exports.saveResume = async (req, res) => {
                 blogUrl: blogUrl || "",
                 age: parsedAge,
                 gender: gender || null,
-                phone: phone || null
+                phone: phone || null,
+                address: address || null,
+                addressDetail: addressDetail || null
             },
             create: {
                 email: email,
@@ -129,7 +160,9 @@ exports.saveResume = async (req, res) => {
                 blogUrl: blogUrl || "",
                 age: parsedAge,
                 gender: gender || null,
-                phone: phone || null
+                phone: phone || null,
+                address: address || null,
+                addressDetail: addressDetail || null
             }
         });
 
