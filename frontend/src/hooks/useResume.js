@@ -21,11 +21,23 @@ const useResume = () => {
     phone: "",
     address: "",
     addressDetail: "",
-    useInternationalAge: false,    resumeTitle: "개발자 이력서",
+    useInternationalAge: false,
+    resumeTitle: "개발자 이력서",
     school: "",
     major: "",
     gpa: "",
     skills: "",
+    
+    // 새로 추가된 필드들
+    militaryStatus: "",
+    militaryPeriod: "",
+    militaryClass: "",
+    selfIntroGrowth: "",
+    selfIntroCharacter: "",
+    selfIntroMotivation: "",
+
+    workExperiences: [],
+    certifications: [],
     projects: [{ id: "init-1", name: "", description: "", role: "", techStack: "", period: "" }],
   });
 
@@ -44,7 +56,7 @@ const useResume = () => {
       age: user.age || "",
       phone: user.phone || "",
       address: user.address || "",
-      addressDetail: user.addressDetail || "", // 누락된 상세주소 필드 추가
+      addressDetail: user.addressDetail || "",
       gender: user.gender || "",
       useInternationalAge: user.useInternationalAge || false,
       resumeTitle: resume.title || "개발자 이력서",
@@ -52,9 +64,26 @@ const useResume = () => {
       major: eduParts[1] || "",
       gpa: eduParts[2] || "",
       skills: resume.skills || "",
+
+      // 새로 추가된 필드들 매핑
+      militaryStatus: resume.militaryStatus || "",
+      militaryPeriod: resume.militaryPeriod || "",
+      militaryClass: resume.militaryClass || "",
+      selfIntroGrowth: resume.selfIntroGrowth || "",
+      selfIntroCharacter: resume.selfIntroCharacter || "",
+      selfIntroMotivation: resume.selfIntroMotivation || "",
+      
+      workExperiences: resume.workExperiences?.length > 0 
+        ? resume.workExperiences.map((w, i) => ({ ...w, id: `db-we-${w.id || i}`, companyName: w.companyName || "", department: w.department || "", role: w.role || "", jobDescription: w.jobDescription || "", period: w.period || "", isCurrent: w.isCurrent || false }))
+        : [],
+        
+      certifications: resume.certifications?.length > 0
+        ? resume.certifications.map((c, i) => ({ ...c, id: `db-cert-${c.id || i}`, type: c.type || "CERT", name: c.name || "", issuer: c.issuer || "", date: c.date || "", score: c.score || "" }))
+        : [],
+
       projects:
         resume.projects?.length > 0
-          ? resume.projects.map((p, i) => ({ ...p, id: `db-${p.id || i}` }))
+          ? resume.projects.map((p, i) => ({ ...p, id: `db-prj-${p.id || i}` }))
           : [{ id: "init-1", name: "", description: "", role: "", techStack: "", period: "" }],
     };
   }, []);
@@ -93,15 +122,13 @@ const useResume = () => {
     checkAuth();
   }, [mapUserDataToFields, navigate]);
 
-  // 폼 입력 변경 핸들러 (체크박스 및 전화번호 자동 하이픈 대응)
+  // 폼 입력 변경 핸들러
   const handleChange = (e) => {
     let { name, value, type, checked } = e.target;
 
-    // 전화번호 자동 하이픈 로직
     if (name === 'phone') {
-      value = value.replace(/[^0-9]/g, ''); // 숫자만 남기기
+      value = value.replace(/[^0-9]/g, '');
       if (value.length <= 3) {
-        // 그대로 유지
       } else if (value.length <= 7) {
         value = `${value.slice(0, 3)}-${value.slice(3)}`;
       } else {
@@ -115,7 +142,7 @@ const useResume = () => {
     });
   };
 
-  // 프로젝트 입력 핸들러
+  // 프로젝트 핸들러
   const handleProjectChange = (index, e) => {
     const { name, value } = e.target;
     const newProjects = [...formData.projects];
@@ -123,116 +150,91 @@ const useResume = () => {
     setFormData({ ...formData, projects: newProjects });
   };
 
-  // 이미지 업로드 핸들러
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("파일 크기는 5MB를 초과할 수 없습니다.");
-      return;
-    }
-
-    const uploadToast = toast.loading("이미지를 업로드하는 중입니다...");
-    const uploadData = new FormData();
-    uploadData.append("profileImage", file);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/resume/upload`, {
-        method: "POST",
-        body: uploadData,
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setFormData({ ...formData, profileImageUrl: data.imageUrl });
-        localStorage.setItem("oneresume-profile-image", data.imageUrl);
-        toast.success("프로필 사진이 성공적으로 등록되었습니다", { id: uploadToast });
-      } else {
-        toast.error(data.message || "업로드에 실패했습니다.", { id: uploadToast });
-      }
-    } catch (error) {
-      console.error("업로드 에러:", error);
-      toast.error("서버와 통신 중 에러가 발생했습니다.", { id: uploadToast });
-    } finally {
-      e.target.value = null;
-    }
-  };
-
-  // GitHub 레포지토리 연동
-  const handleGithubSync = async () => {
-    let url = formData.githubUrl.trim();
-    if (!url) {
-      toast.error("GitHub 링크 또는 아이디를 먼저 입력해주세요!");
-      return;
-    }
-
-    let username = url;
-    if (url.includes("github.com/")) {
-      const splitUrl = url.split("github.com/")[1];
-      username = splitUrl.split("/")[0];
-    }
-
-    const loadingToast = toast.loading(`${username}님의 데이터를 가져오는 중...`);
-
-    try {
-      let repos = [];
-      let page = 1;
-      let keepFetching = true;
-
-      while (keepFetching) {
-        const response = await axios.get(
-          `https://api.github.com/users/${username}/repos?sort=updated&per_page=100&page=${page}`
-        );
-        if (response.data.length === 0) {
-          keepFetching = false;
-        } else {
-          repos = [...repos, ...response.data];
-          page++;
-        }
-        if (page > 10) keepFetching = false;
-      }
-
-      if (repos.length === 0) {
-        toast.error("공개된 레포지토리가 없습니다.", { id: loadingToast });
-        return;
-      }
-
-      const fetchedProjects = repos.map((repo, index) => ({
-        id: `github-${repo.id || index}-${Date.now()}`,
-        name: repo.name || "",
-        description: repo.description || "GitHub에서 자동 연동된 프로젝트입니다.",
-        role: "Developer",
-        techStack: repo.language || "",
-        period: `${(repo.created_at || "").substring(0, 7)} ~ ${(repo.updated_at || "").substring(0, 7)}`,
-      }));
-
-      const repoLanguages = repos.map((r) => r.language).filter(Boolean);
-      const languages = [...new Set(repoLanguages)].join(", ");
-
-      setFormData((prev) => ({
-        ...prev,
-        skills: prev.skills ? `${prev.skills}, ${languages}` : languages,
-        projects: fetchedProjects,
-      }));
-
-      toast.success(`연동 성공! ${repos.length}개의 프로젝트를 가져왔습니다.`, { id: loadingToast });
-    } catch (error) {
-      console.error("GitHub 연동 에러:", error);
-      toast.error("데이터를 불러오지 못했습니다. 아이디를 확인해주세요.", { id: loadingToast });
-    }
-  };
-
   const addProject = () => {
     setFormData({
       ...formData,
-      projects: [...formData.projects, { id: `manual-${Date.now()}`, name: "", description: "", role: "", techStack: "", period: "" }],
+      projects: [...formData.projects, { id: `manual-prj-${Date.now()}`, name: "", description: "", role: "", techStack: "", period: "" }],
     });
-    toast.success("새 프로젝트 블록이 추가되었습니다.");
+    toast.success("새 프로젝트가 추가되었습니다.");
   };
 
   const removeProject = (index) => {
     const newProjects = formData.projects.filter((_, i) => i !== index);
     setFormData({ ...formData, projects: newProjects });
     toast("항목이 삭제되었습니다.", { icon: "🗑️" });
+  };
+
+  // 경력사항 핸들러
+  const handleWorkChange = (index, e) => {
+    const { name, value, type, checked } = e.target;
+    const newWorks = [...formData.workExperiences];
+    newWorks[index][name] = type === 'checkbox' ? checked : value;
+    setFormData({ ...formData, workExperiences: newWorks });
+  };
+
+  const addWork = () => {
+    setFormData({
+      ...formData,
+      workExperiences: [...formData.workExperiences, { id: `manual-we-${Date.now()}`, companyName: "", department: "", role: "", jobDescription: "", period: "", isCurrent: false }],
+    });
+    toast.success("새 경력사항이 추가되었습니다.");
+  };
+
+  const removeWork = (index) => {
+    const newWorks = formData.workExperiences.filter((_, i) => i !== index);
+    setFormData({ ...formData, workExperiences: newWorks });
+    toast("경력 항목이 삭제되었습니다.", { icon: "🗑️" });
+  };
+
+  // 자격증/어학 핸들러
+  const handleCertChange = (index, e) => {
+    const { name, value } = e.target;
+    const newCerts = [...formData.certifications];
+    newCerts[index][name] = value;
+    setFormData({ ...formData, certifications: newCerts });
+  };
+
+  const addCert = () => {
+    setFormData({
+      ...formData,
+      certifications: [...formData.certifications, { id: `manual-cert-${Date.now()}`, type: "CERT", name: "", issuer: "", date: "", score: "" }],
+    });
+    toast.success("새 스펙 항목이 추가되었습니다.");
+  };
+
+  const removeCert = (index) => {
+    const newCerts = formData.certifications.filter((_, i) => i !== index);
+    setFormData({ ...formData, certifications: newCerts });
+    toast("항목이 삭제되었습니다.", { icon: "🗑️" });
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const uploadData = new FormData();
+    uploadData.append("profileImage", file);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/resume/upload`, { method: "POST", body: uploadData });
+      const data = await response.json();
+      if (response.ok) {
+        setFormData({ ...formData, profileImageUrl: data.imageUrl });
+        toast.success("프로필 사진이 등록되었습니다.");
+      }
+    } catch (error) { console.error(error); }
+  };
+
+  const handleGithubSync = async () => {
+    let url = formData.githubUrl.trim();
+    if (!url) return;
+    let username = url.includes("github.com/") ? url.split("github.com/")[1].split("/")[0] : url;
+    try {
+      const response = await axios.get(`https://api.github.com/users/${username}/repos?sort=updated`);
+      const fetchedProjects = response.data.map(repo => ({
+        id: `github-${repo.id}`, name: repo.name, description: repo.description || "", role: "Developer", techStack: repo.language || "", period: ""
+      }));
+      setFormData(prev => ({ ...prev, projects: fetchedProjects }));
+      toast.success("GitHub 연동 완료!");
+    } catch (error) { toast.error("GitHub 연동 실패"); }
   };
 
   const handleDragEnd = (result) => {
@@ -243,82 +245,29 @@ const useResume = () => {
     setFormData({ ...formData, projects: items });
   };
 
-  // AI 첨삭 요청 함수
   const auditContent = async (fieldName, content, context = "") => {
-    if (!content || content.trim().length < 5) {
-      toast.error("분석할 내용을 조금 더 자세히 적어주세요! (최소 5자)");
-      return null;
-    }
-
-    const auditToast = toast.loading("AI가 내용을 정교하게 분석 중입니다...");
-
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/ai/audit`, {
-        fieldName,
-        content,
-        context
-      });
-
-      toast.success("AI 분석이 완료되었습니다!", { id: auditToast });
+      const response = await axios.post(`${API_BASE_URL}/api/ai/audit`, { fieldName, content, context });
       return response.data;
-    } catch (error) {
-      console.error("AI Audit Error:", error);
-      toast.error(error.response?.data?.message || "AI 분석 중 오류가 발생했습니다.", { id: auditToast });
-      return null;
-    }
+    } catch (error) { return null; }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const token = localStorage.getItem("oneresume-token");
-    const currentSubdomain = formData.subdomain.trim().toLowerCase();
-    
-    if (!currentSubdomain) {
-      toast.error("서브도메인을 입력해주세요");
-      return;
-    }
-    const isValidFormat = /^[a-z0-9]+$/.test(currentSubdomain);
-    if (!isValidFormat) {
-      toast.error("서브도메인은 영문 소문자와 숫자만 사용할 수 있습니다.");
-      return;
-    }
-    const forbiddenSubdomains = ["www", "api", "admin", "root", "localhost", "dev", "test", "master", "main"];
-    if (forbiddenSubdomains.includes(currentSubdomain)) {
-      toast.error(`'${currentSubdomain}'은(는) 사용할 수 없는 단어입니다.`);
-      return;
-    }
-
-    const savingToast = toast.loading("데이터 저장 중...");
-
     fetch(`${API_BASE_URL}/api/resume/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(formData),
     })
-      .then((res) => res.json())
-      .then((data) => {
-        toast.success("성공적으로 저장 및 퍼블리싱 되었습니다.", { id: savingToast });
-        localStorage.removeItem("oneresume-profile-image");
-      })
-      .catch((err) => {
-        console.error("에러:", err);
-        toast.error("저장 중 오류가 발생했습니다.", { id: savingToast });
-      });
+    .then(() => toast.success("저장되었습니다."))
+    .catch(() => toast.error("저장 실패"));
   };
 
   return {
-    formData,
-    setFormData,
-    loading,
-    handleChange,
-    handleProjectChange,
-    handleImageUpload,
-    handleGithubSync,
-    addProject,
-    removeProject,
-    handleDragEnd,
-    auditContent,
-    handleSubmit,
+    formData, setFormData, loading, handleChange, handleProjectChange, handleImageUpload, handleGithubSync,
+    addProject, removeProject, handleWorkChange, addWork, removeWork, handleCertChange, addCert, removeCert,
+    handleDragEnd, auditContent, handleSubmit
   };
 };
 

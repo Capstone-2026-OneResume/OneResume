@@ -52,13 +52,50 @@ model Resume {
   id        Int       @id @default(autoincrement())
   title     String    // 이력서 제목
   theme     String    @default("classic")
-		education String?			// "학교|전공|학점|상태" 형태 또는 별도 모델
-		skills				String?			// "기술 스택 부분"
-		projects		Project[]
+  education String?   // "학교|전공|학점|상태" 형태 또는 별도 모델
+  skills    String?   // "기술 스택 부분"
+  
+  // 새로 추가된 항목들 (병역 & 자기소개서)
+  militaryStatus      String? // 군필, 미필, 면제 등
+  militaryPeriod      String? // 복무 기간
+  militaryClass       String? // 군별/계급
+  selfIntroGrowth     String? @db.Text // 성장과정
+  selfIntroCharacter  String? @db.Text // 성격의 장단점
+  selfIntroMotivation String? @db.Text // 지원동기 및 포부
+
+  projects        Project[]
+  workExperiences WorkExperience[]
+  certifications  Certification[]
+
   userId    Int
   user      User      @relation(fields: [userId], references: [id])
-  createdAt DateTime  @default(now()) // 데이터 관리의 신뢰도: 이력서 하단에 "최종수정일: 2026..." 같은 문구를 자동으로 넣어주면, 인사담당자등 이 지원자는 정보를 계속 업데이트하는구나라고 신뢰를 줄 수 있음.
-  updatedAt DateTime  @updatedAt // 나중에 사용자가 이력서를 여러 개 만들었을 때, "가장 최근에 수정된 이력서"를 상단에 보여주려면 필수, 디버깅에 효율적임.
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// 경력 사항 (추가)
+model WorkExperience {
+  id              Int     @id @default(autoincrement())
+  companyName     String
+  department      String?
+  role            String? // 직위
+  jobDescription  String? @db.Text // 담당 직무
+  period          String? // 근무 기간
+  isCurrent       Boolean @default(false) // 재직 중 여부
+  resumeId        Int
+  resume          Resume  @relation(fields: [resumeId], references: [id])
+}
+
+// 자격증, 어학, 수상 내역 (추가)
+model Certification {
+  id          Int     @id @default(autoincrement())
+  type        String  @default("CERT") // CERT(자격증), LANG(어학), AWARD(수상)
+  name        String  // 시험/자격증명
+  issuer      String? // 발급기관
+  date        String? // 취득일
+  score       String? // 점수/등급
+  resumeId    Int
+  resume      Resume  @relation(fields: [resumeId], references: [id])
 }
 
 // 프로젝트 경험

@@ -3,8 +3,8 @@ const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const prisma = require('../config/prisma');
 const s3 = require('../config/s3');
 
-// 커리어넷 API 키 (백엔드에서 관리)
-const CAREERNET_API_KEY = "363e75e925916a9a7a13c31671239c89";
+// 커리어넷 API 키 (환경 변수에서 로드)
+const CAREERNET_API_KEY = process.env.CAREERNET_API_KEY;
 
 // [0] 커리어넷 학교/전공 검색 프록시 API
 exports.searchCareerNet = async (req, res) => {
@@ -16,12 +16,15 @@ exports.searchCareerNet = async (req, res) => {
             return res.status(400).json({ message: "검색어는 2자 이상 입력해주세요." });
         }
 
-        const url = `https://www.career.go.kr/cnet/openapi/getOpenApi?apiKey=${CAREERNET_API_KEY}&svcType=api&svcCode=${type}&contentType=json&gubun=univ_list&${type === 'SCHOOL' ? 'searchSchulNm' : 'searchMajorNm'}=${encodeURIComponent(keyword)}`;
+        // 커리어넷 API 명세: SCHOOL은 searchSchulNm, MAJOR는 searchTitle 사용
+        const isSchool = type === 'SCHOOL';
+        const searchParam = isSchool ? 'searchSchulNm' : 'searchTitle';
+        const url = `https://www.career.go.kr/cnet/openapi/getOpenApi?apiKey=${CAREERNET_API_KEY}&svcType=api&svcCode=${type}&contentType=json&gubun=univ_list&${searchParam}=${encodeURIComponent(keyword)}`;
         
         console.log(`🔗 Request URL: ${url}`);
         const response = await axios.get(url);
         
-        // 데이터 구조 로깅 (어떤 필드가 오는지 확인)
+        // 데이터 구조 로깅
         console.log("📦 Response Data Summary:", JSON.stringify(response.data).substring(0, 200) + "...");
 
         res.status(200).json(response.data);
@@ -38,23 +41,18 @@ exports.uploadImage = async (req, res) => {
             return res.status(400).json({ message: "파일이 전달되지 않았습니다." });
         }
 
-        // 파일 이름을 UTF-8로 인코딩하여 S3에 저장 (한글 파일명 깨짐 방지)
         const encodedName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
         const fileName = `profiles/${Date.now()}_${encodedName}`;
         const bucketName = process.env.S3_BUCKET_NAME.trim();
 
-        // S3에 업로드할 명령어 생성 (파일 버퍼와 MIME 타입 포함)
         const command = new PutObjectCommand({
             Bucket: bucketName,
             Key: fileName,
-            Body: req.file.buffer, // multer로 메모리에 저장된 파일 버퍼
+            Body: req.file.buffer,
             ContentType: req.file.mimetype,
         });
 
-        // S3에 파일 업로드 실행
         await s3.send(command);
-
-        // 업로드된 파일의 공개 URL 생성 (버킷이 퍼블릭 액세스 허용되어 있다고 가정)
         const fileUrl = `https://${bucketName}.s3.amazonaws.com/${fileName}`;
 
         console.log("✅ 이미지 S3 직접 업로드 성공:", fileUrl);
@@ -74,7 +72,11 @@ exports.getUserBySubdomain = async (req, res) => {
             where: { subdomain },
             include: {
                 resumes: {
-                    include: { projects: true }
+                    include: { 
+                        projects: true,
+                        workExperiences: true,
+                        certifications: true
+                    }
                 }
             }
         });
@@ -90,25 +92,24 @@ exports.getUserBySubdomain = async (req, res) => {
     }
 };
 
-// [3] 이력서 저장 API (DB 연동 완료)
+// [3] 이력서 저장 API
 exports.saveResume = async (req, res) => {
     try {
-        // 프론트엔드에서 보낸 데이터 구조 분해 할당
         const {
             username, email, subdomain, bio, githubUrl, blogUrl, profileImageUrl,
-            age, gender, phone, address, addressDetail,
-            resumeTitle, school, major, gpa, skills, projects
+            age, gender, phone, address, addressDetail, useInternationalAge,
+            resumeTitle, school, major, gpa, skills, projects,
+            militaryStatus, militaryPeriod, militaryClass,
+            selfIntroGrowth, selfIntroCharacter, selfIntroMotivation,
+            workExperiences, certifications
         } = req.body;
 
-        // 1) 필수 값 체크 (이메일과 서브도메인은 고유값이므로 필수)
         if (!email || !subdomain) {
             return res.status(400).json({ message: "이메일과 개인 도메인은 필수 입력 사항입니다." });
         }
 
-        // age를 숫자로 변환 (값이 있을 때만)
         const parsedAge = age ? parseInt(age, 10) : null;
 
-        // 2) 서브도메인 예약어(금지어) 차단 로직
         const forbiddenWords = ['admin', 'api', 'www', 'mail', 'master', 'root', 'help', 'login', '너임마청년']
         if (forbiddenWords.includes(subdomain.toLowerCase())) {
             return res.status(400).json({
@@ -116,11 +117,9 @@ exports.saveResume = async (req, res) => {
             });
         }
 
-        // 3) 3칸으로 쪼개진 학력 데이터를 DB 저장을 위해 하나로 결합
         const educationArr = [school, major, gpa].filter(Boolean);
         const educationString = educationArr.length > 0 ? educationArr.join(" | ") : null;
 
-        // 4) 프로젝트 배열에서 이름이나 설명이 있는 '유효한' 프로젝트만 필터링
         const validProjects = Array.isArray(projects) 
             ? projects.filter(p => p.name || p.description).map(p => ({
                     name: p.name || "",
@@ -131,9 +130,29 @@ exports.saveResume = async (req, res) => {
                 }))
             : [];
 
+        const validWorkExperiences = Array.isArray(workExperiences)
+            ? workExperiences.filter(w => w.companyName).map(w => ({
+                    companyName: w.companyName || "",
+                    department: w.department || "",
+                    role: w.role || "",
+                    jobDescription: w.jobDescription || "",
+                    period: w.period || "",
+                    isCurrent: w.isCurrent || false
+                }))
+            : [];
+
+        const validCertifications = Array.isArray(certifications)
+            ? certifications.filter(c => c.name).map(c => ({
+                    type: c.type || "CERT",
+                    name: c.name || "",
+                    issuer: c.issuer || "",
+                    date: c.date || "",
+                    score: c.score || ""
+                }))
+            : [];
+
         console.log(`--- [${username}]님의 데이터 저장 시작 ---`);
 
-        // 5) User 데이터 저장 (upsert)
         const user = await prisma.user.upsert({
             where: { email: email },
             update: {
@@ -147,7 +166,8 @@ exports.saveResume = async (req, res) => {
                 gender: gender || null,
                 phone: phone || null,
                 address: address || null,
-                addressDetail: addressDetail || null
+                addressDetail: addressDetail || null,
+                useInternationalAge: useInternationalAge ?? false
             },
             create: {
                 email: email,
@@ -162,11 +182,23 @@ exports.saveResume = async (req, res) => {
                 gender: gender || null,
                 phone: phone || null,
                 address: address || null,
-                addressDetail: addressDetail || null
+                addressDetail: addressDetail || null,
+                useInternationalAge: useInternationalAge ?? false
             }
         });
 
-        // 6) 이력서 및 프로젝트 저장/업데이트 로직
+        const resumeData = {
+            title: resumeTitle || "프론트엔드 개발자 이력서",
+            education: educationString,
+            skills: skills || "",
+            militaryStatus: militaryStatus || null,
+            militaryPeriod: militaryPeriod || null,
+            militaryClass: militaryClass || null,
+            selfIntroGrowth: selfIntroGrowth || null,
+            selfIntroCharacter: selfIntroCharacter || null,
+            selfIntroMotivation: selfIntroMotivation || null,
+        };
+
         const existingResume = await prisma.resume.findFirst({
             where: { userId: user.id }
         });
@@ -175,25 +207,29 @@ exports.saveResume = async (req, res) => {
             await prisma.resume.update({
                 where: { id: existingResume.id },
                 data: {
-                    title: resumeTitle || "프론트엔드 개발자 이력서",
-                    education: educationString,
-                    skills: skills || "",
+                    ...resumeData,
                     projects: {
                         deleteMany: {},
                         create: validProjects
+                    },
+                    workExperiences: {
+                        deleteMany: {},
+                        create: validWorkExperiences
+                    },
+                    certifications: {
+                        deleteMany: {},
+                        create: validCertifications
                     }
                 }
             });
         } else {
             await prisma.resume.create({
                 data: {
+                    ...resumeData,
                     userId: user.id,
-                    title: resumeTitle || "프론트엔드 개발자 이력서",
-                    education: educationString,
-                    skills: skills || "",
-                    projects: {
-                        create: validProjects
-                    }
+                    projects: { create: validProjects },
+                    workExperiences: { create: validWorkExperiences },
+                    certifications: { create: validCertifications }
                 }
             });
         }
