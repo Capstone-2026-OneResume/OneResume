@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import DaumPostcode from "react-daum-postcode";
@@ -15,6 +16,7 @@ const ResumeForm = ({
   auditContent, // AI 분석 함수 추가
   isDarkMode,
   isCompact = false
+		
 }) => {
   // 현재 활성화된 탭 상태
   const [activeTab, setActiveTab] = useState('basic');

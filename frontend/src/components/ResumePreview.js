@@ -29,7 +29,8 @@ const ResumePreview = React.forwardRef(({
   setFocusedPage,
   containerHeight = 0,
   scale = 1.0,
-  marginTop = 0
+  marginTop = 0,
+  printMode = false // PDF 캡처 전용 모드 추가
 }, ref) => {
   
   const getGithubUsername = (url) => {
@@ -84,6 +85,8 @@ const ResumePreview = React.forwardRef(({
   };
 
   const pages = [];
+  
+  // --- PAGE 01: 기본 정보 & 교육 ---
   pages.push({ id: 1, content: (
     <>
       <div className="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
@@ -173,8 +176,15 @@ const ResumePreview = React.forwardRef(({
     </>
   )});
 
-  if (githubUsername || formData.projects.length > 0) {
-    pages.push({ id: 2, content: (
+  // --- 동적 프로젝트 페이지 생성 로직 ---
+  const projectsPerPage = 3; // 한 페이지에 들어갈 프로젝트 수
+  const totalProjects = formData.projects.length;
+  
+  // 첫 번째 프로젝트 페이지는 Github Calendar를 포함할 수 있음
+  if (githubUsername || totalProjects > 0) {
+    const firstBatch = formData.projects.slice(0, 2); // 캘린더가 있으면 첫 페이지는 2개만
+    
+    pages.push({ id: pages.length + 1, content: (
       <>
         {githubUsername && (
           <section className="mb-10">
@@ -187,7 +197,7 @@ const ResumePreview = React.forwardRef(({
         <section>
           <h3 className={`text-xs uppercase tracking-widest font-black mb-6 border-b-2 pb-1 ${theme.sectionTitle}`}>Experience</h3>
           <div className="space-y-8">
-            {formData.projects.slice(0, 2).map((project, index) => (
+            {firstBatch.map((project, index) => (
               <div key={index} className={`relative pl-6 border-l-2 ${theme.timelineLine}`}>
                 <div className="absolute w-3 h-3 rounded-full -left-[7px] top-1.5 bg-blue-600"></div>
                 <h4 className={`text-xl font-bold ${theme.textMain}`}>{project.name}</h4>
@@ -197,33 +207,36 @@ const ResumePreview = React.forwardRef(({
             ))}
           </div>
         </section>
-        <div className="absolute bottom-4 right-8 text-[10px] opacity-30 font-bold tracking-tighter italic">PAGE 02</div>
+        <div className="absolute bottom-4 right-8 text-[10px] opacity-30 font-bold tracking-tighter italic">PAGE {String(pages.length + 1).padStart(2, '0')}</div>
       </>
     )});
+
+    // 남은 프로젝트들을 위한 추가 페이지들 자동 생성
+    for (let i = 2; i < totalProjects; i += projectsPerPage) {
+      const batch = formData.projects.slice(i, i + projectsPerPage);
+      pages.push({ id: pages.length + 1, content: (
+        <>
+          <section>
+            <h3 className={`text-xs uppercase tracking-widest font-black mb-6 border-b-2 pb-1 ${theme.sectionTitle}`}>Projects continued</h3>
+            <div className="space-y-8">
+              {batch.map((project, index) => (
+                <div key={index} className={`relative pl-6 border-l-2 ${theme.timelineLine}`}>
+                  <div className="absolute w-3 h-3 rounded-full -left-[7px] top-1.5 bg-blue-600"></div>
+                  <h4 className={`text-xl font-bold ${theme.textMain}`}>{project.name}</h4>
+                  <p className={`text-sm mb-2 text-blue-500 font-bold`}>{project.techStack}</p>
+                  <p className={`text-sm whitespace-pre-wrap ${theme.textSub}`}>{project.description}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+          <div className="absolute bottom-4 right-8 text-[10px] opacity-30 font-bold tracking-tighter italic">PAGE {String(pages.length + 1).padStart(2, '0')}</div>
+        </>
+      )});
+    }
   }
 
-  if (formData.projects.length > 2) {
-    pages.push({ id: 3, content: (
-      <>
-        <section>
-          <h3 className={`text-xs uppercase tracking-widest font-black mb-6 border-b-2 pb-1 ${theme.sectionTitle}`}>Projects continued</h3>
-          <div className="space-y-8">
-            {formData.projects.slice(2, 5).map((project, index) => (
-              <div key={index} className={`relative pl-6 border-l-2 ${theme.timelineLine}`}>
-                <div className="absolute w-3 h-3 rounded-full -left-[7px] top-1.5 bg-blue-600"></div>
-                <h4 className={`text-xl font-bold ${theme.textMain}`}>{project.name}</h4>
-                <p className={`text-sm mb-2 text-blue-500 font-bold`}>{project.techStack}</p>
-                <p className={`text-sm whitespace-pre-wrap ${theme.textSub}`}>{project.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-        <div className="absolute bottom-4 right-8 text-[10px] opacity-30 font-bold tracking-tighter italic">PAGE 03</div>
-      </>
-    )});
-  }
-
-  pages.push({ id: 4, content: (
+  // --- 마지막 페이지: 마무리 인사 ---
+  pages.push({ id: pages.length + 1, content: (
     <>
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white mb-8 shadow-2xl">
@@ -239,9 +252,33 @@ const ResumePreview = React.forwardRef(({
           )}
         </div>
       </div>
-      <div className="absolute bottom-4 right-8 text-[10px] opacity-30 font-bold tracking-tighter italic">PAGE 04</div>
+      <div className="absolute bottom-4 right-8 text-[10px] opacity-30 font-bold tracking-tighter italic">PAGE {String(pages.length + 1).padStart(2, '0')}</div>
     </>
   )});
+
+  // PDF 캡처 전용 렌더링 (간결하고 정갈한 레이아웃)
+  if (printMode) {
+    return (
+      <div ref={ref} className="bg-white">
+        {pages.map((page) => (
+          <div 
+            key={page.id} 
+            data-print-page="true" 
+            className="w-[210mm] h-[297mm] p-[20mm] bg-white text-zinc-900 flex flex-col relative overflow-hidden shrink-0"
+            style={{ 
+              fontFamily: "'Noto Sans KR', sans-serif",
+              boxSizing: 'border-box',
+              display: 'block', // 인쇄 시 레이아웃 깨짐 방지
+              pageBreakAfter: 'always', // 다음 페이지로 넘김 강제
+              pageBreakInside: 'avoid' // 페이지 중간에 잘리는 것 방지
+            }}
+          >
+            {page.content}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   const gap = 8;
   const pageW = 210;

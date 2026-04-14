@@ -2,32 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 @media print {
-  /* 인쇄 시 배경색과 글자색을 그대로 유지 */
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    background-color: white !important;
-  }
-  
-  /* 입력창, 헤더, 버튼 등 이력서 외의 모든 요소 숨기기 */
-  header, form, button, .lg\:w-\[450px\] {
-    display: none !important;
+  /* 1. 기본 설정: 모든 것을 숨김 */
+  body * {
+    visibility: hidden !important;
   }
 
-  /* 이력서 영역만 화면에 꽉 차게 설정 */
-  .max-w-7xl {
+  /* 2. 인쇄 전용 영역과 그 자식들만 보이게 함 */
+  .print\:block,
+  .print\:block * {
+    visibility: visible !important;
+  }
+
+  /* 3. 인쇄 영역 레이아웃 최적화 (절대 위치 제거) */
+  .print\:block {
+    position: static !important; /* 흐름을 따르게 하여 멀티 페이지 가능케 함 */
+    width: 210mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
     display: block !important;
-    max-width: 100% !important;
+  }
+
+  /* 4. 배경 및 마진 초기화 */
+  body, html {
+    background: white !important;
     margin: 0 !important;
     padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
-  .shadow-2xl, .border-t-\[12px\] {
-    box-shadow: none !important;
-    border-top: none !important;
-  }
-
-  /* A4 사이즈 강제 설정 */
+  /* 5. A4 사이즈 강제 설정 */
   @page {
     size: A4;
     margin: 0;

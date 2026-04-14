@@ -6,6 +6,9 @@ import toast from "react-hot-toast";
 import useResume from "../hooks/useResume";
 import PageLayout from "../components/PageLayout";
 import ThemeToggle from "../components/ThemeToggle";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import { createRoot } from "react-dom/client";
 
 function EditPage({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
@@ -83,11 +86,26 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
 
 
   const getPageIds = () => {
-    const ids = [1];
+    const ids = [1]; // 기본 페이지 1
+    const totalProjects = formData.projects.length;
     const hasGithub = formData.githubUrl?.trim();
-    if (hasGithub || formData.projects.length > 0) ids.push(2);
-    if (formData.projects.length > 2) ids.push(3);
-    ids.push(4);
+    
+    // 프로젝트나 깃허브 정보가 있으면 프로젝트 페이지들 추가
+    if (hasGithub || totalProjects > 0) {
+      ids.push(2); // 첫 번째 프로젝트 페이지
+      
+      // 2개 초과인 경우 추가 페이지들 계산 (ResumePreview 로직과 동일하게 3개씩 끊기)
+      const extraProjects = totalProjects - 2;
+      if (extraProjects > 0) {
+        const extraPages = Math.ceil(extraProjects / 3);
+        for (let i = 0; i < extraPages; i++) {
+          ids.push(3 + i);
+        }
+      }
+    }
+    
+    // 맨 마지막 "감사합니다" 페이지 추가
+    ids.push(ids.length + 1);
     return ids;
   };
 
@@ -162,8 +180,13 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
   };
 
   const downloadPDF = () => {
-    toast.success("PDF 출력을 시작합니다");
-    setTimeout(() => window.print(), 1000);
+    // 1. 인쇄 시작 알림
+    toast.success("PDF 출력을 준비합니다. 'PDF로 저장'을 선택해주세요.");
+    
+    // 2. 잠시 대기 후 인쇄창 실행 (UI가 정리될 시간)
+    setTimeout(() => {
+      window.print();
+    }, 500);
   };
 
   if (loading) return (
@@ -321,6 +344,15 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
           </div>
         </div>
       </main>
+
+      {/* 🖨️ 인쇄 전용 영역 (평소에는 숨겨져 있다가 인쇄할 때만 나타남) */}
+      <div className="hidden print:block print:absolute print:inset-0 print:z-[9999] bg-white">
+        <ResumePreview 
+          formData={formData} 
+          isDarkMode={false} 
+          printMode={true} 
+        />
+      </div>
     </PageLayout>
   );
 }
