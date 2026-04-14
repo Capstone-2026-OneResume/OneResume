@@ -190,7 +190,14 @@ const ResumePreview = React.forwardRef(({
           <section className="mb-10">
             <h3 className={`text-xs uppercase tracking-widest font-black mb-5 border-b-2 pb-1 ${theme.sectionTitle}`}>Contributions</h3>
             <div className={`flex justify-center p-6 border rounded-2xl ${theme.boxBg}`}>
-              <GitHubCalendar username={githubUsername} blockSize={10} blockMargin={4} fontSize={10} colorScheme={isDarkMode ? "dark" : "light"} theme={calendarTheme} />
+              <GitHubCalendar 
+                username={githubUsername} 
+                blockSize={printMode ? 8 : 10} 
+                blockMargin={printMode ? 3 : 4} 
+                fontSize={10} 
+                colorScheme={printMode ? "light" : (isDarkMode ? "dark" : "light")} 
+                theme={calendarTheme} 
+              />
             </div>
           </section>
         )}

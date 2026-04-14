@@ -2,38 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 @media print {
-  /* 1. 기본 설정: 모든 것을 숨김 */
-  body * {
-    visibility: hidden !important;
-  }
-
-  /* 2. 인쇄 전용 영역과 그 자식들만 보이게 함 */
-  .print\:block,
-  .print\:block * {
-    visibility: visible !important;
-  }
-
-  /* 3. 인쇄 영역 레이아웃 최적화 (절대 위치 제거) */
-  .print\:block {
-    position: static !important; /* 흐름을 따르게 하여 멀티 페이지 가능케 함 */
-    width: 210mm !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-    background: white !important;
-    overflow: visible !important;
-    display: block !important;
-  }
-
-  /* 4. 배경 및 마진 초기화 */
-  body, html {
-    background: white !important;
+  /* 1. 기본 배경 및 색상 보존 설정 */
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background-color: white !important;
     margin: 0 !important;
     padding: 0 !important;
     height: auto !important;
     overflow: visible !important;
   }
 
-  /* 5. A4 사이즈 강제 설정 */
+  /* 2. 인쇄 포털이 첫 페이지 최상단에 오도록 설정 */
+  .print\:block {
+    display: block !important;
+    position: static !important; /* 흐름을 따르게 함 */
+    width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* 4. 불필요한 알림 및 오버레이 숨김 */
+  [id^="headlessui-portal-root"], /* Headless UI 포털 (모달 등) */
+  #toaster, /* 토스터 아이디 */
+  .react-hot-toast, /* 토스트 클래스 */
+  div[style*="z-index: 9999"], /* z-index가 매우 높은 모든 레이어 (알림 등) */
+  .go2072402845,
+  [role="status"] {
+    display: none !important;
+  }
+
+  /* 5. A4 규격 강제 및 여백 제거 */
   @page {
     size: A4;
     margin: 0;

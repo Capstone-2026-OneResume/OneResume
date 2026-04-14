@@ -6,9 +6,6 @@ import toast from "react-hot-toast";
 import useResume from "../hooks/useResume";
 import PageLayout from "../components/PageLayout";
 import ThemeToggle from "../components/ThemeToggle";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
-import { createRoot } from "react-dom/client";
 
 function EditPage({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
@@ -251,15 +248,15 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
         </div>
       </header>
 
-      <main className="h-[calc(100vh-56px)] flex overflow-hidden w-full relative">
+      <main className="h-[calc(100vh-56px)] flex overflow-hidden w-full relative print:hidden">
         <div 
           style={{ width: `${leftWidth}%` }}
           className={`h-full overflow-y-auto custom-scrollbar p-4 lg:p-6 border-r transition-none ${
             isDarkMode ? 'border-zinc-800 bg-zinc-900/30' : 'border-zinc-200 bg-gray-50/30'
           }`}
         >
-          {/* Zoom을 사용하면 스케일링으로 인한 레이아웃 깨짐 없이 부드럽게 조절됨 */}
-          <div className="max-w-[720px] mx-auto pb-10" style={{ zoom: formZoom }}>
+          {/* 폼의 너비 제한을 풀고 와이드하게 사용 */}
+          <div className="w-full max-w-[1100px] mx-auto pb-10 px-4" style={{ zoom: formZoom }}>
             <ResumeForm
               formData={formData}
               handleChange={handleChange}
@@ -345,8 +342,8 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
         </div>
       </main>
 
-      {/* 🖨️ 인쇄 전용 영역 (평소에는 숨겨져 있다가 인쇄할 때만 나타남) */}
-      <div className="hidden print:block print:absolute print:inset-0 print:z-[9999] bg-white">
+      {/* 🖨️ 인쇄 전용 영역 (static 흐름으로 변경하여 밀림 방지) */}
+      <div className="hidden print:block bg-white relative">
         <ResumePreview 
           formData={formData} 
           isDarkMode={false} 
