@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken'); // 토큰 검증용
 const authController = require('../controllers/authController');
+const oauthController = require('../controllers/oauthController'); // 신규 추가
 const { S3Client } = require('@aws-sdk/client-s3'); // S3 클라이언트
 const multer = require('multer');
 const multerS3 = require('multer-s3');
@@ -66,5 +67,11 @@ router.post('/profile-setup', authMiddleware, profileUpload, authController.setu
 // [비밀번호 재설정 관련]
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
+
+// [소셜 로그인 관련]
+router.get('/kakao', oauthController.kakaoLogin);
+router.get('/kakao/callback', oauthController.kakaoCallback);
+router.get('/naver', oauthController.naverLogin);
+router.get('/naver/callback', oauthController.naverCallback);
 
 module.exports = router;

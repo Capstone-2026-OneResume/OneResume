@@ -12,8 +12,10 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   process.env.FRONTEND_URL,
-  process.env.S3_BUCKET_NAME ? `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com` : null,
-  process.env.S3_BUCKET_NAME && process.env.AWS_REGION ? `http://${process.env.S3_BUCKET_NAME}.s3-website-${process.env.AWS_REGION}.amazonaws.com` : null
+  // S3 static hosting 주소들 (점과 하이픈 모든 형식 허용)
+  'http://oneresume-storage-parkungjung.s3-website.ap-northeast-2.amazonaws.com',
+  'http://oneresume-storage-parkungjung.s3-website-ap-northeast-2.amazonaws.com',
+  process.env.S3_BUCKET_NAME ? `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com` : null
 ].filter(Boolean);
 
 const app = express();
@@ -26,11 +28,10 @@ app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     
-    // 허용 목록에 있거나 amazonaws.com으로 끝나는 도메인 허용
-    const isAllowed = allowedOrigins.some(allowed => 
-      origin === allowed || 
-      (allowed.includes('amazonaws.com') && origin.endsWith('amazonaws.com'))
-    );
+    // 허용 목록에 있거나 amazonaws.com으로 끝나는 S3 관련 도메인들 허용
+    const isAllowed = allowedOrigins.some(allowed => origin === allowed) || 
+                     origin.includes('s3-website') || 
+                     origin.endsWith('amazonaws.com');
     
     if (isAllowed) {
       callback(null, true);
@@ -44,10 +45,13 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// 2. [Security] Helmet 적용
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+// 2. [Security] Helmet 적용 (디버깅을 위해 잠시 주석 처리)
+// app.use(helmet({
+//   crossOriginResourcePolicy: { policy: "cross-origin" },
+//   crossOriginOpenerPolicy: false,
+//   originAgentCluster: false,
+//   contentSecurityPolicy: false,
+// }));
 
 const getSafeAllowedOrigin = (req) => {
     const origin = req.headers.origin;

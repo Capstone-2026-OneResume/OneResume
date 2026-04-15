@@ -103,9 +103,9 @@ const Signup = ({ onSuccess, onSwitch, isDarkMode }) => {
   const isStep2 = step === 2;
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-10">
+    <div className="w-full max-w-md mx-auto space-y-6 pt-10 pb-4">
       {/* 고정 헤더 */}
-      <div className="space-y-3 text-center lg:text-left">
+      <div className="space-y-3 text-center lg:text-left mt-2">
         <h2 className={`text-4xl font-black tracking-tight ${theme.titleText}`}>회원가입</h2>
         <div className="relative h-6">
           <p className={`absolute inset-0 text-lg font-bold transition-all duration-500 ${theme.subText} ${!isStep2 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
@@ -121,7 +121,7 @@ const Signup = ({ onSuccess, onSwitch, isDarkMode }) => {
       <div className="relative">
         {/* Step 1: 이메일 인증 (왼쪽에서 오고감) */}
         <div className={`w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${!isStep2 ? 'opacity-100 translate-x-0 relative z-20' : 'opacity-0 -translate-x-full absolute top-0 left-0 z-10'}`}>
-          <div className="space-y-7">
+          <div className="space-y-6">
             <div className="space-y-2">
               <label className={`block text-[14px] font-black uppercase tracking-widest ml-2 ${theme.labelText}`}>이메일 주소</label>
               <input type="email" value={email} disabled={step > 0} onChange={(e) => setEmail(e.target.value)} className={inputBaseClass} placeholder="example@gmail.com" />
@@ -193,8 +193,37 @@ const Signup = ({ onSuccess, onSwitch, isDarkMode }) => {
         </div>
       </div>
 
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="flex-1 h-px bg-zinc-500/10" />
+          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${theme.labelText}`}>또는 소셜 계정으로 시작</span>
+          <div className="flex-1 h-px bg-zinc-500/10" />
+        </div>
+
+        <div className="flex justify-center gap-6">
+          <button 
+            onClick={() => window.location.href = `${API_BASE_URL}/api/auth/kakao`}
+            className="w-14 h-14 flex items-center justify-center bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] rounded-full transition-all active:scale-90 shadow-xl shadow-[#FEE500]/20 group"
+            title="카카오 로그인"
+          >
+            <svg viewBox="0 0 24 24" className="w-9 h-9 fill-current group-hover:scale-110 transition-transform transform translate-y-[1.5px]">
+              <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.707 4.8 4.33 6.048-.17.625-.62 2.28-.714 2.613-.113.4.14.394.29.293.118-.08 1.882-1.28 2.635-1.793.82.114 1.666.173 2.458.173 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/>
+            </svg>
+          </button>
+          <button 
+            onClick={() => window.location.href = `${API_BASE_URL}/api/auth/naver`}
+            className="w-14 h-14 flex items-center justify-center bg-[#03C75A] hover:bg-[#02b359] text-white rounded-full transition-all active:scale-90 shadow-xl shadow-[#03C75A]/20 group"
+            title="네이버 로그인"
+          >
+            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current group-hover:scale-110 transition-transform">
+              <path d="M16.273 12.845L7.376 0H0v24h7.726V11.155L16.624 24H24V0h-7.727v12.845z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
       {/* 고정 푸터 */}
-      <div className="text-center pt-10 border-t border-zinc-500/10">
+      <div className="text-center pt-4 border-t border-zinc-500/10">
         <button onClick={onSwitch} className="text-xs font-black text-blue-600 hover:underline tracking-wider uppercase">이미 회원이신가요? 로그인하기</button>
       </div>
     </div>

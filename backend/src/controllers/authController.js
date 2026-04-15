@@ -134,7 +134,11 @@ exports.login = async (req, res) => {
             where: { email },
             include: {
                 resumes: {
-                    include: { projects: true }
+                    include: { 
+                        projects: true,
+                        workExperiences: true,
+                        certifications: true
+                    }
                 }
             }
         });
@@ -281,12 +285,13 @@ const mailOptions = {
 exports.setupProfile = async (req, res) => {
 	try {
 		const userId = req.user.id; // authMiddleware에서 넣어준 유저 정보
-		const { username, age, phone } = req.body;
+		const { username, age, phone, useInternationalAge } = req.body;
 
 		const updateData = {
 			username: username,
 			age: age ? parseInt(age) : null,
 			phone: phone || null,
+			useInternationalAge: useInternationalAge === true || useInternationalAge === 'true',
 			isProfileComplete: true, // 프로필 설정 완료!
 			updatedAt: new Date(),
 	};
@@ -319,7 +324,11 @@ exports.getMe = async (req, res) => {
             where: { id: decoded.userId },
             include: {
                 resumes: {
-                    include: { projects: true }
+                    include: { 
+                        projects: true,
+                        workExperiences: true,
+                        certifications: true
+                    }
                 }
             } 
         });

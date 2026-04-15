@@ -125,7 +125,18 @@ const ResumePreview = React.forwardRef(({
                 <div className="flex items-center gap-4 col-span-2">
                   <span className={`text-[12px] uppercase font-black tracking-widest px-3 py-1.5 rounded-lg ${theme.skillBg}`}>병역 사항</span>
                   <span className={`text-[17px] font-bold ${theme.textMain}`}>
-                    {formData.militaryStatus} {formData.militaryClass && `(${formData.militaryClass})`} {formData.militaryPeriod && `- ${formData.militaryPeriod}`}
+                    {formData.militaryStatus}
+                    {formData.militaryStatus === '면제' ? (
+                      formData.militaryExemption && ` (${formData.militaryExemption})`
+                    ) : (
+                      <>
+                        {formData.militaryBranch && ` | ${formData.militaryBranch}`}
+                        {formData.militaryRank && ` ${formData.militaryRank}`}
+                        {(formData.militaryStartDate || formData.militaryEndDate) && (
+                          ` | ${formData.militaryStartDate || ''} ~ ${formData.militaryEndDate || ''}`
+                        )}
+                      </>
+                    )}
                   </span>
                 </div>
               )}
