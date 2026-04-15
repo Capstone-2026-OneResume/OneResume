@@ -40,8 +40,21 @@ jobs:
             echo "S3_BUCKET_NAME=oneresume-storage-parkungjung" >> .env 
             echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
             
-            # Prisma 세팅 및 서버 재시작
+            # 소셜 로그인 관련 (추가됨)
+            echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env
+            echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> .env
+            echo "KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}" >> .env
+            echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> .env
+            echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> .env
+            echo "NAVER_REDIRECT_URI=${{ secrets.NAVER_REDIRECT_URI }}" >> .env
+            
+            # AI 및 외부 API 관련 (추가됨)
+            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+            echo "CAREERNET_API_KEY=${{ secrets.CAREERNET_API_KEY }}" >> .env
+            
+            # Prisma 세팅 및 DB 스키마 동기화 (군 관련 필드 생성 등)
             npx prisma generate
+            npx prisma db push --accept-data-loss # DB 스키마 강제 동기화 (주의: 컬럼 변경 반영)
             
             # 기존 프로세스 정리 후 확실하게 다시 시작 (restart)
             pm2 restart all || pm2 start index.js --name "oneresume-api"
