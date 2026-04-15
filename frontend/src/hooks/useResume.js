@@ -65,10 +65,14 @@ const useResume = () => {
       gpa: eduParts[2] || "",
       skills: resume.skills || "",
 
-      // 새로 추가된 필드들 매핑
+      // 병역 사항 매핑
       militaryStatus: resume.militaryStatus || "",
-      militaryPeriod: resume.militaryPeriod || "",
-      militaryClass: resume.militaryClass || "",
+      militaryBranch: resume.militaryBranch || "",
+      militaryRank: resume.militaryRank || "",
+      militaryStartDate: resume.militaryStartDate || "",
+      militaryEndDate: resume.militaryEndDate || "",
+      militaryExemption: resume.militaryExemption || "",
+
       selfIntroGrowth: resume.selfIntroGrowth || "",
       selfIntroCharacter: resume.selfIntroCharacter || "",
       selfIntroMotivation: resume.selfIntroMotivation || "",

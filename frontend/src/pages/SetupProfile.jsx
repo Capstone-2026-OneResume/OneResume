@@ -13,6 +13,7 @@ const SetupProfile = ({ isDarkMode, toggleDarkMode }) => {
     username: '',
     age: '',
     phone: '',
+    useInternationalAge: false,
     profileImage: null,
     previewUrl: null
   });
@@ -29,19 +30,20 @@ const SetupProfile = ({ isDarkMode, toggleDarkMode }) => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProfile({ ...profile, [name]: value });
+    const { name, value, type, checked } = e.target;
+    setProfile({ ...profile, [name]: type === 'checkbox' ? checked : value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('oneresume-token');
     const loading = toast.loading("프로필 정보를 저장 중입니다...");
     
     const formData = new FormData();
     formData.append('username', profile.username);
     formData.append('age', profile.age);
     formData.append('phone', profile.phone);
+    formData.append('useInternationalAge', profile.useInternationalAge);
     if (profile.profileImage) {
       formData.append('profileImage', profile.profileImage);
     }
@@ -99,23 +101,58 @@ const SetupProfile = ({ isDarkMode, toggleDarkMode }) => {
             </div>
 
             <div className="grid gap-6">
-              {[
-                { label: '이름 (Name)', name: 'username', placeholder: '홍길동', type: 'text' },
-                { label: '나이 (Age)', name: 'age', placeholder: '28', type: 'number' },
-                { label: '휴대폰 번호 (Phone)', name: 'phone', placeholder: '010-1234-5678', type: 'tel' },
-              ].map((field) => (
-                <div key={field.name} className="flex flex-col gap-2">
-                  <label className="pl-1 text-zinc-600 dark:text-zinc-400 text-sm font-bold uppercase tracking-wide">{field.label}</label>
-                  <input
-                    name={field.name}
-                    type={field.type}
-                    placeholder={field.placeholder}
-                    onChange={handleChange}
-                    className="w-full px-6 py-4 bg-gray-100 dark:bg-zinc-700 rounded-[32px] text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium border border-transparent dark:border-zinc-600 text-lg"
-                    required
-                  />
+              <div className="flex flex-col gap-2">
+                <label className="pl-1 text-zinc-600 dark:text-zinc-400 text-sm font-bold uppercase tracking-wide">이름 (Name)</label>
+                <input
+                  name="username"
+                  type="text"
+                  placeholder="홍길동"
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 bg-gray-100 dark:bg-zinc-700 rounded-[32px] text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium border border-transparent dark:border-zinc-600 text-lg"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-zinc-600 dark:text-zinc-400 text-sm font-bold uppercase tracking-wide">나이 (Age)</label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      name="useInternationalAge" 
+                      checked={profile.useInternationalAge} 
+                      onChange={handleChange} 
+                      className="sr-only peer" 
+                    />
+                    <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 flex items-center justify-center ${isDarkMode ? 'bg-zinc-700 border-zinc-600 peer-checked:bg-blue-600 peer-checked:border-blue-600' : 'bg-gray-100 border-zinc-300 peer-checked:bg-blue-600 peer-checked:border-blue-600'}`}>
+                      <svg className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${profile.useInternationalAge ? 'scale-100' : 'scale-0'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-black text-zinc-500 dark:text-zinc-400 group-hover:text-blue-500 transition-colors">만 나이 적용</span>
+                  </label>
                 </div>
-              ))}
+                <input
+                  name="age"
+                  type="number"
+                  placeholder="28"
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 bg-gray-100 dark:bg-zinc-700 rounded-[32px] text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium border border-transparent dark:border-zinc-600 text-lg"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="pl-1 text-zinc-600 dark:text-zinc-400 text-sm font-bold uppercase tracking-wide">휴대폰 번호 (Phone)</label>
+                <input
+                  name="phone"
+                  type="tel"
+                  placeholder="010-1234-5678"
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 bg-gray-100 dark:bg-zinc-700 rounded-[32px] text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium border border-transparent dark:border-zinc-600 text-lg"
+                  required
+                />
+              </div>
             </div>
 
             <div className="flex flex-col items-center gap-6 pt-4">

@@ -20,19 +20,17 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     height: window.innerHeight 
   });
 
-  // ... (window resize effect remains the same) ...
+  // --- 새로고침 및 이탈 방지 경고 (beforeunload) ---
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = ""; 
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
-  // --- 네비게이션 핸들러 (무한 루프) ---
-  const handlePrevPage = (e) => {
-    e.stopPropagation();
-    setFocusedPage(prev => (prev === 1 ? totalPages : prev - 1));
-  };
-
-  const handleNextPage = (e) => {
-    e.stopPropagation();
-    setFocusedPage(prev => (prev === totalPages ? 1 : prev + 1));
-  };
-
+  // --- 윈도우 리사이즈 핸들러 ---
   useEffect(() => {
     let animationFrameId;
     const handleResize = () => {
@@ -86,6 +84,25 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     addCert, removeCert, handleDragEnd, auditContent, handleSubmit
   } = useResume();
 
+  const handleLogout = () => {
+    localStorage.removeItem("oneresume-token"); 
+    sessionStorage.removeItem("oneresume-token");
+    localStorage.removeItem("oneresume-profile-image");
+    toast.success("정상적으로 로그아웃되었습니다.");
+    navigate("/");
+  };
+
+  // --- 네비게이션 핸들러 (무한 루프) ---
+  const handlePrevPage = (e) => {
+    e.stopPropagation();
+    setFocusedPage(prev => (prev === 1 ? totalPages : prev - 1));
+  };
+
+  const handleNextPage = (e) => {
+    e.stopPropagation();
+    setFocusedPage(prev => (prev === totalPages ? 1 : prev + 1));
+  };
+
   const copyShareLink = () => {
     const currentSubdomain = formData.subdomain?.trim();
     if (!currentSubdomain) { toast.error("서브도메인을 먼저 설정해주세요"); return; }
@@ -119,7 +136,7 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
     <PageLayout isDarkMode={isDarkMode} noPadding={true}>
       <header className={`h-14 px-6 border-b flex items-center justify-between z-20 print:hidden ${isDarkMode ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-zinc-200'}`}>
         <div className="flex items-center gap-3"><div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg font-black">O</div><h1 className={`text-base font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>OneResume</h1></div>
-        <div className="flex items-center gap-3"><ThemeToggle isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /><button onClick={copyShareLink} className="bg-blue-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs">링크 복사</button><button onClick={downloadPDF} className="bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs">PDF</button><button onClick={() => { localStorage.clear(); navigate("/"); }} className="bg-red-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs">로그아웃</button></div>
+        <div className="flex items-center gap-3"><ThemeToggle isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /><button onClick={copyShareLink} className="bg-blue-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs">링크 복사</button><button onClick={downloadPDF} className="bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs">PDF</button><button onClick={handleLogout} className="bg-red-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs">로그아웃</button></div>
       </header>
 
       <main className="h-[calc(100vh-56px)] flex overflow-hidden w-full relative print:hidden">

@@ -28,6 +28,7 @@ model User {
 		phone      					String?  // 전화번호
 		address      				String?  // 거주지 주소
 		addressDetail				String?  // 상세 주소 (동, 호수 등)
+		useInternationalAge Boolean @default(false) // 만 나이 사용 여부
 		isProfileComplete Boolean @default(false) // 온보딩 완료 여부
 
 // 이메일 인증 관련
@@ -55,10 +56,14 @@ model Resume {
   education String?   // "학교|전공|학점|상태" 형태 또는 별도 모델
   skills    String?   // "기술 스택 부분"
   
-  // 새로 추가된 항목들 (병역 & 자기소개서)
-  militaryStatus      String? // 군필, 미필, 면제 등
-  militaryPeriod      String? // 복무 기간
-  militaryClass       String? // 군별/계급
+  // 세분화된 병역 사항 (잡코리아/사람인 연동 대비)
+  militaryStatus      String? // 군필, 미필, 면제, 해당없음
+  militaryBranch      String? // 육군, 해군, 공군, 해병대, 의경, 카투사 등
+  militaryRank        String? // 병장, 하사, 소위 등 (계급)
+  militaryStartDate   String? // 입대년월 (YYYY.MM)
+  militaryEndDate     String? // 전역년월 (YYYY.MM)
+  militaryExemption   String? // 면제 사유
+  
   selfIntroGrowth     String? @db.Text // 성장과정
   selfIntroCharacter  String? @db.Text // 성격의 장단점
   selfIntroMotivation String? @db.Text // 지원동기 및 포부

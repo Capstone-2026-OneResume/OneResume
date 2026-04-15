@@ -276,11 +276,25 @@ const ResumeForm = ({
 
                 <div className={`p-6 lg:p-8 rounded-[32px] border ${theme.cardBg} space-y-5`}>
                   <div className="flex items-center gap-2 mb-2"><div className="w-1.5 h-4 bg-blue-600 rounded-full" /><label className={`text-[13px] font-black uppercase tracking-widest ${theme.labelText}`}>병역 사항</label></div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="flex flex-col gap-2"><label className={`pl-1 text-[11px] font-black uppercase ${theme.subText}`}>군필 여부</label><select name="militaryStatus" value={formData.militaryStatus || ""} onChange={handleChange} className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${theme.innerInputBg} font-bold`}><option value="">선택 안함</option><option value="군필">군필</option><option value="미필">미필</option><option value="면제">면제</option><option value="해당없음">해당없음</option></select></div>
-                    <div className="flex flex-col gap-2"><label className={`pl-1 text-[11px] font-black uppercase ${theme.subText}`}>군별 / 계급</label><input type="text" name="militaryClass" value={formData.militaryClass || ""} onChange={handleChange} placeholder="육군 / 병장" className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${theme.innerInputBg}`} /></div>
+                    <div className="flex flex-col gap-2"><label className={`pl-1 text-[11px] font-black uppercase ${theme.subText}`}>군필 여부</label><select name="militaryStatus" value={formData.militaryStatus || ""} onChange={handleChange} className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${theme.innerInputBg} font-bold`}><option value="">선택 안함</option><option value="군필">군필</option><option value="복무중">복무중</option><option value="미필">미필</option><option value="면제">면제</option><option value="해당없음">해당없음</option></select></div>
+                    {formData.militaryStatus === '면제' && (
+                      <div className="flex flex-col gap-2"><label className={`pl-1 text-[11px] font-black uppercase ${theme.subText}`}>면제 사유</label><input type="text" name="militaryExemption" value={formData.militaryExemption || ""} onChange={handleChange} placeholder="면제 사유를 간단히 입력" className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${theme.innerInputBg}`} /></div>
+                    )}
                   </div>
-                  <div className="flex flex-col gap-2"><label className={`pl-1 text-[11px] font-black uppercase ${theme.subText}`}>복무 기간</label><input type="text" name="militaryPeriod" value={formData.militaryPeriod || ""} onChange={handleChange} placeholder="YYYY.MM ~ YYYY.MM" className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${theme.innerInputBg}`} /></div>
+                  {!['미필', '해당없음', '면제'].includes(formData.militaryStatus) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-2"><label className={`pl-1 text-[11px] font-black uppercase ${theme.subText}`}>군별</label><input type="text" name="militaryBranch" value={formData.militaryBranch || ""} onChange={handleChange} placeholder="육군" className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${theme.innerInputBg}`} /></div>
+                        <div className="flex flex-col gap-2"><label className={`pl-1 text-[11px] font-black uppercase ${theme.subText}`}>계급</label><input type="text" name="militaryRank" value={formData.militaryRank || ""} onChange={handleChange} placeholder="병장" className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${theme.innerInputBg}`} /></div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-2"><label className={`pl-1 text-[11px] font-black uppercase ${theme.subText}`}>입대년월</label><input type="text" name="militaryStartDate" value={formData.militaryStartDate || ""} onChange={handleChange} placeholder="YYYY.MM" className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${theme.innerInputBg}`} /></div>
+                        <div className="flex flex-col gap-2"><label className={`pl-1 text-[11px] font-black uppercase ${theme.subText}`}>전역년월</label><input type="text" name="militaryEndDate" value={formData.militaryEndDate || ""} onChange={handleChange} placeholder="YYYY.MM" className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${theme.innerInputBg}`} /></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -95,6 +95,8 @@ exports.getUserBySubdomain = async (req, res) => {
 // [3] 이력서 저장 API
 exports.saveResume = async (req, res) => {
     try {
+        const userId = req.user.id; // authMiddleware에서 넘겨준 유저 ID
+
         const {
             username, email, subdomain, bio, githubUrl, blogUrl, profileImageUrl,
             age, gender, phone, address, addressDetail, useInternationalAge,
@@ -104,14 +106,10 @@ exports.saveResume = async (req, res) => {
             workExperiences, certifications
         } = req.body;
 
-        if (!email || !subdomain) {
-            return res.status(400).json({ message: "이메일과 개인 도메인은 필수 입력 사항입니다." });
-        }
-
         const parsedAge = age ? parseInt(age, 10) : null;
 
         const forbiddenWords = ['admin', 'api', 'www', 'mail', 'master', 'root', 'help', 'login', '너임마청년']
-        if (forbiddenWords.includes(subdomain.toLowerCase())) {
+        if (forbiddenWords && subdomain && forbiddenWords.includes(subdomain.toLowerCase())) {
             return res.status(400).json({
                 message: "해당 도메인은 부적절합니다. 다른 도메인을 입력해주세요."
             });
@@ -151,11 +149,11 @@ exports.saveResume = async (req, res) => {
                 }))
             : [];
 
-        console.log(`--- [${username}]님의 데이터 저장 시작 ---`);
+        console.log(`--- [${username || userId}]님의 데이터 저장 시작 ---`);
 
-        const user = await prisma.user.upsert({
-            where: { email: email },
-            update: {
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: {
                 username: username || "",
                 subdomain: subdomain,
                 bio: bio || "",
@@ -167,23 +165,7 @@ exports.saveResume = async (req, res) => {
                 phone: phone || null,
                 address: address || null,
                 addressDetail: addressDetail || null,
-                useInternationalAge: useInternationalAge ?? false
-            },
-            create: {
-                email: email,
-                password: "temp_password_123",
-                username: username || "이름 없음",
-                subdomain: subdomain,
-                bio: bio || "",
-                profileImageUrl: profileImageUrl || "",
-                githubUrl: githubUrl || "",
-                blogUrl: blogUrl || "",
-                age: parsedAge,
-                gender: gender || null,
-                phone: phone || null,
-                address: address || null,
-                addressDetail: addressDetail || null,
-                useInternationalAge: useInternationalAge ?? false
+                useInternationalAge: useInternationalAge === true || useInternationalAge === 'true'
             }
         });
 
@@ -234,7 +216,7 @@ exports.saveResume = async (req, res) => {
             });
         }
 
-        console.log(`--- [${username}]님의 데이터 DB 저장 성공! ---`);
+        console.log(`--- [${username || user.email}]님의 데이터 DB 저장 성공! ---`);
         res.status(200).json({ message: "이력서가 DB에 성공적으로 저장되었습니다! 🚀" });
 
     } catch (error) {
