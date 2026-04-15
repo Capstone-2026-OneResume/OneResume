@@ -33,7 +33,6 @@ const ResumeForm = ({
 
   const [aiFeedback, setAiFeedback] = useState(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   // theme settings
   const theme = {
@@ -86,7 +85,6 @@ const ResumeForm = ({
     }
 
     const loadingToast = toast.loading("AI가 내용을 분석하고 있습니다...");
-    setIsAiLoading(true);
     try {
       const result = await auditContent(fieldName, content, context);
       if (result) {
@@ -99,7 +97,6 @@ const ResumeForm = ({
     } catch (e) {
       toast.error("네트워크 오류가 발생했습니다.", { id: loadingToast });
     }
-    setIsAiLoading(false);
   };
 
   const applyAiRefinement = (text) => {
