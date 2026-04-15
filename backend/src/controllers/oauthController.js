@@ -12,7 +12,10 @@ exports.kakaoLogin = (req, res) => {
 // 2. [KAKAO] 콜백 처리
 exports.kakaoCallback = async (req, res) => {
     const { code } = req.query;
-    if (!code) return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_code`);
+    // FRONTEND_URL 끝의 슬래시 제거 로직
+    const frontendUrl = process.env.FRONTEND_URL.replace(/\/$/, "");
+
+    if (!code) return res.redirect(`${frontendUrl}/login?error=no_code`);
 
     try {
         // [A] 인가 코드를 Access Token으로 교환
@@ -67,11 +70,11 @@ exports.kakaoCallback = async (req, res) => {
         );
 
         // [E] 프론트엔드 콜백 페이지로 리다이렉트 (토큰 전달)
-        res.redirect(`${process.env.FRONTEND_URL}/oauth/callback?token=${token}`);
+        res.redirect(`${frontendUrl}/oauth/callback?token=${token}`);
 
     } catch (error) {
         console.error('Kakao Auth Error:', error.response?.data || error.message);
-        res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+        res.redirect(`${frontendUrl}/login?error=auth_failed`);
     }
 };
 
@@ -85,7 +88,9 @@ exports.naverLogin = (req, res) => {
 // 4. [NAVER] 콜백 처리
 exports.naverCallback = async (req, res) => {
     const { code, state } = req.query;
-    if (!code) return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_code`);
+    const frontendUrl = process.env.FRONTEND_URL.replace(/\/$/, "");
+
+    if (!code) return res.redirect(`${frontendUrl}/login?error=no_code`);
 
     try {
         // [A] 인가 코드를 Access Token으로 교환
@@ -137,10 +142,10 @@ exports.naverCallback = async (req, res) => {
             { expiresIn: '1d' }
         );
 
-        res.redirect(`${process.env.FRONTEND_URL}/oauth/callback?token=${token}`);
+        res.redirect(`${frontendUrl}/oauth/callback?token=${token}`);
 
     } catch (error) {
         console.error('Naver Auth Error:', error.response?.data || error.message);
-        res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+        res.redirect(`${frontendUrl}/login?error=auth_failed`);
     }
 };
