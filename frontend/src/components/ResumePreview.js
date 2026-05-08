@@ -419,7 +419,7 @@ const ResumePreview = React.memo(React.forwardRef((props, ref) => {
     }
 
     return pagesList;
-  }, [formData, githubUsername, theme, getItemHeight, renderItem, header, handleLinkClick]);
+  }, [formData, githubUsername, getItemHeight, renderItem, header]);
 
   useEffect(() => {
     const cols = paneWidth > 75 ? 4 : (paneWidth > 55 ? 3 : (paneWidth > 30 ? 2 : 1));
