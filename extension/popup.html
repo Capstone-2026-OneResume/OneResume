@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 350px;
+      padding: 20px;
+      font-family: 'Pretendard', sans-serif;
+      background: #f8fafc;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: #2563eb;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+    }
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 900;
+      color: #1e293b;
+      letter-spacing: -0.5px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #f1f5f9;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cbd5e1;
+    }
+    .status-dot.active {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .data-box {
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-family: 'monospace';
+      overflow: auto;
+      max-height: 200px;
+      white-space: pre-wrap;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .footer {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 10px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">O</div>
+      <h2>OneResume Connect</h2>
+    </div>
+
+    <div id="status-badge" class="status-badge">
+      <div id="status-dot" class="status-dot"></div>
+      <span id="status-text">연동 대기 중</span>
+    </div>
+
+    <div id="data-display" class="data-box">
+      데이터를 불러오려면 웹사이트에서 [원클릭 동기화]를 진행해주세요.
+    </div>
+
+    <button id="refresh-btn" class="btn">데이터 새로고침</button>
+    
+    <div class="footer">
+      © 2026 OneResume Project
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
