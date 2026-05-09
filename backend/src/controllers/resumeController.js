@@ -405,10 +405,23 @@ exports.saveResume = async (req, res) => {
 
         if (existingResume) {
             console.log(`🔄 [Resume Update] ID: ${existingResume.id}`);
+            // 업데이트 시에는 관계형 데이터를 deleteMany/create로 갱신
             await prisma.resume.update({
                 where: { id: existingResume.id },
                 data: {
-                    ...resumeData,
+                    title: resumeData.title,
+                    education: resumeData.education,
+                    skills: resumeData.skills,
+                    militaryStatus: resumeData.militaryStatus,
+                    militaryBranch: resumeData.militaryBranch,
+                    militaryRank: resumeData.militaryRank,
+                    militaryStartDate: resumeData.militaryStartDate,
+                    militaryEndDate: resumeData.militaryEndDate,
+                    militaryExemption: resumeData.militaryExemption,
+                    selfIntroGrowth: resumeData.selfIntroGrowth,
+                    selfIntroCharacter: resumeData.selfIntroCharacter,
+                    selfIntroMotivation: resumeData.selfIntroMotivation,
+                    sectionOrder: resumeData.sectionOrder,
                     projects: {
                         deleteMany: {},
                         create: validProjects

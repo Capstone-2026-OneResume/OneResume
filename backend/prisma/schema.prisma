@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider   = "prisma-client-js"
   engineType = "library"
@@ -11,110 +8,100 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 사용자 정보
 model User {
-  id        			Int      @id @default(autoincrement())
-		username					String?
-  email     			String   @unique
-  password  			String?		
-  subdomain 			String   @unique // 여기에 user-id.oneresume.com의 id가 들어감.
-		profileImage String? 	// 프로필 이미지 경로
-		bio										String? 	// 한 줄 소개
-		profileImageUrl String? // 프로필 사진, S3 URL 저장용
-		githubUrl				String?  // 깃허브 링크 
-		blogUrl						String?		// 블로그 링크
-		age        					Int?     // 나이
-		gender      				String?  // 성별
-		phone      					String?  // 전화번호
-		address      				String?  // 거주지 주소
-		addressDetail				String?  // 상세 주소 (동, 호수 등)
-		useInternationalAge Boolean @default(false) // 만 나이 사용 여부
-		isProfileComplete Boolean @default(false) // 온보딩 완료 여부
-
-// 이메일 인증 관련
-		isVerified			Boolean		@default(false) // 인증 완료 여부
-		verificationToken String? // 인증용 난수 토큰
-
-// 소셜 로그인(OAuth) 관련
-		provider		String			@default("LOCAL") // "LOCAL", "GITHUB", "GOOGLE" 등
-		socialId		String?		@unique		// 소셜 서비스에서 제공하는 고유 ID
-
-  resumes   Resume[]
-  createdAt DateTime @default(now()) // 이력서 생성일
-  updatedAt DateTime @updatedAt // 이력서 최종 수정일
-
-// 비밀번호 찾기 관련
-  resetPasswordToken String? // 임시 열쇠
-		resetPasswordExpires DateTime? // 열쇠 만료 시간
+  id                   Int       @id @default(autoincrement())
+  email                String    @unique
+  password             String?
+  username             String?
+  subdomain            String    @unique
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  bio                  String?
+  blogUrl              String?
+  githubUrl            String?
+  profileImage         String?
+  profileImageUrl      String?
+  isVerified           Boolean   @default(false)
+  provider             String    @default("LOCAL")
+  socialId             String?   @unique
+  verificationToken    String?
+  resetPasswordExpires DateTime?
+  resetPasswordToken   String?
+  age                  Int?
+  isProfileComplete    Boolean   @default(false)
+  phone                String?
+  gender               String?
+  address              String?
+  addressDetail        String?
+  useInternationalAge  Boolean   @default(false)
+  resumes              Resume[]
 }
 
-// 이력서 기본 정보
 model Resume {
-  id        Int       @id @default(autoincrement())
-  title     String    // 이력서 제목
-  theme     String    @default("classic")
-  education String?   // "학교|전공|학점|상태" 형태 또는 별도 모델
-  skills    String?   // "기술 스택 부분"
-  
-  // 세분화된 병역 사항 (잡코리아/사람인 연동 대비)
-  militaryStatus      String? // 군필, 미필, 면제, 해당없음
-  militaryBranch      String? // 육군, 해군, 공군, 해병대, 의경, 카투사 등
-  militaryRank        String? // 병장, 하사, 소위 등 (계급)
-  militaryStartDate   String? // 입대년월 (YYYY.MM)
-  militaryEndDate     String? // 전역년월 (YYYY.MM)
-  militaryExemption   String? // 면제 사유
-  
-  selfIntroGrowth     String? @db.Text // 성장과정
-  selfIntroCharacter  String? @db.Text // 성격의 장단점
-  selfIntroMotivation String? @db.Text // 지원동기 및 포부
+  id                  Int              @id @default(autoincrement())
+  title               String
+  theme               String           @default("classic")
+  userId              Int
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  education           String?
+  skills              String?
+  militaryStatus      String?
+  selfIntroCharacter  String?          @db.Text
+  selfIntroGrowth     String?          @db.Text
+  selfIntroMotivation String?          @db.Text
+  militaryBranch      String?
+  militaryEndDate     String?
+  militaryExemption   String?
+  militaryRank        String?
+  militaryStartDate   String?
+  sectionOrder        String?          @default("edu,skills,experience,projects,certs,extra")
+  certifications      Certification[]
+  projects            Project[]
+  user                User             @relation(fields: [userId], references: [id])
+  workExperiences     WorkExperience[]
 
-  sectionOrder        String? @default("edu,skills,experience,projects,certs,extra") // 섹션 순서 (쉼표로 구분)
-
-  projects        Project[]
-  workExperiences WorkExperience[]
-  certifications  Certification[]
-
-  userId    Int
-  user      User      @relation(fields: [userId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  @@index([userId], map: "Resume_userId_fkey")
 }
 
-// 경력 사항 (추가)
 model WorkExperience {
-  id              Int     @id @default(autoincrement())
-  companyName     String
-  department      String?
-  role            String? // 담당 직무 (예: 프론트엔드 개발자)
-  position        String? // 직위/직급 (예: 과장, 대리)
-  jobDescription  String? @db.Text // 상세 업무 내용
-  period          String? // 근무 기간
-  isCurrent       Boolean @default(false) // 재직 중 여부
-  resumeId        Int
-  resume          Resume  @relation(fields: [resumeId], references: [id])
+  id             Int     @id @default(autoincrement())
+  companyName    String
+  department     String?
+  role           String?
+  jobDescription String? @db.Text
+  period         String?
+  isCurrent      Boolean @default(false)
+  resumeId       Int
+  position       String?
+  resume         Resume  @relation(fields: [resumeId], references: [id])
+
+  @@index([resumeId], map: "WorkExperience_resumeId_fkey")
 }
 
-// 자격증, 어학, 수상 내역 (추가)
 model Certification {
-  id          Int     @id @default(autoincrement())
-  type        String  @default("CERT") // CERT(자격증), LANG(어학), AWARD(수상)
-  name        String  // 시험/자격증명
-  issuer      String? // 발급기관
-  date        String? // 취득일
-  score       String? // 점수/등급
-  resumeId    Int
-  resume      Resume  @relation(fields: [resumeId], references: [id])
+  id       Int     @id @default(autoincrement())
+  type     String  @default("CERT")
+  name     String
+  issuer   String?
+  date     String?
+  score    String?
+  resumeId Int
+  resume   Resume  @relation(fields: [resumeId], references: [id])
+
+  @@index([resumeId], map: "Certification_resumeId_fkey")
 }
 
-// 프로젝트 경험
 model Project {
   id          Int     @id @default(autoincrement())
-  name        String  // 프로젝트명
+  name        String
   description String? @db.Text
-		role								String? // 담당 역할
-  techStack   String?  // 사용 기술 (JSON 문자열 등으로 저장)
-		period						String?
+  techStack   String?
   githubUrl   String?
   resumeId    Int
+  period      String?
+  role        String?
   resume      Resume  @relation(fields: [resumeId], references: [id])
+
+  @@index([resumeId], map: "Project_resumeId_fkey")
 }
