@@ -6,33 +6,41 @@ function ConnectModal({ isOpen, onClose, isDarkMode }) {
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // 확장 프로그램 설치 여부 확인
+  // --- 확장 프로그램 실시간 감지 로직 ---
   useEffect(() => {
     if (isOpen) {
-      const checkExtension = () => {
-        const event = new CustomEvent('ONERESUME_PING');
-        window.dispatchEvent(event);
-      };
+      console.log("🔍 [Website] Detecting extension...");
 
       const handlePong = () => {
+        console.log("📥 [Website] PONG received from extension!");
         setIsExtensionInstalled(true);
       };
 
       window.addEventListener('ONERESUME_PONG', handlePong);
-      checkExtension();
 
-      // 브라우저 익스텐션 전용 API 체크 (존재 시 설치된 것으로 간주)
-      if (window.chrome && window.chrome.runtime && window.chrome.runtime.sendMessage) {
-        // 단, 외부 웹사이트에서 접근 가능하도록 설정되어 있어야 함
-      }
+      // 확장 프로그램이 로드될 시간을 주거나, 놓쳤을 경우를 대비해 3번 시도
+      const pingInterval = setInterval(() => {
+        if (!isExtensionInstalled) {
+          window.dispatchEvent(new CustomEvent('ONERESUME_PING'));
+        }
+      }, 500);
 
-      return () => window.removeEventListener('ONERESUME_PONG', handlePong);
+      // 3초 후에는 시도 중단
+      const timeout = setTimeout(() => {
+        clearInterval(pingInterval);
+      }, 3000);
+
+      return () => {
+        window.removeEventListener('ONERESUME_PONG', handlePong);
+        clearInterval(pingInterval);
+        clearTimeout(timeout);
+      };
     }
-  }, [isOpen]);
+  }, [isOpen, isExtensionInstalled]);
 
   if (!isOpen) return null;
 
-  // 확장 프로그램으로 토큰 직접 전달 (원클릭 연동)
+  // --- 원클릭 동기화 실행 ---
   const handleSyncExtension = () => {
     const token = localStorage.getItem("oneresume-token") || sessionStorage.getItem("oneresume-token");
     if (!token) {
@@ -41,23 +49,27 @@ function ConnectModal({ isOpen, onClose, isDarkMode }) {
     }
 
     setIsSyncing(true);
-    const loadingToast = toast.loading("확장 프로그램과 연결 중...");
+    const loadingToast = toast.loading("확장 프로그램과 연동 중...");
+    console.log("📤 [Website] Sending sync token to extension...");
 
-    // 확장 프로그램에 메시지 전송
+    // 확장 프로그램에 토큰 전달
     window.postMessage({ 
       type: 'ONERESUME_SYNC_TOKEN', 
       token: token 
     }, "*");
 
-    // 확장 프로그램으로부터 응답 대기 (3초 후 타임아웃)
-    const timeout = setTimeout(() => {
-      setIsSyncing(false);
-      toast.error("확장 프로그램 응답이 없습니다. 설치 여부를 확인해주세요.", { id: loadingToast });
-    }, 3000);
+    // 성공 응답 대기 (5초 타임아웃)
+    const syncTimeout = setTimeout(() => {
+      if (isSyncing) {
+        setIsSyncing(false);
+        toast.error("연동 응답 시간이 초과되었습니다. 페이지 새로고침 후 다시 시도해 주세요.", { id: loadingToast });
+      }
+    }, 5000);
 
     const handleSyncSuccess = (event) => {
       if (event.data?.type === 'ONERESUME_SYNC_SUCCESS') {
-        clearTimeout(timeout);
+        console.log("✅ [Website] Sync confirmed by extension!");
+        clearTimeout(syncTimeout);
         setIsSyncing(false);
         toast.success("확장 프로그램 연동 성공!", { id: loadingToast });
         window.removeEventListener('message', handleSyncSuccess);
@@ -96,16 +108,13 @@ function ConnectModal({ isOpen, onClose, isDarkMode }) {
       <div className={`relative w-full max-w-lg rounded-[40px] overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-500 ${
         isDarkMode ? 'bg-zinc-900 border border-zinc-800' : 'bg-white'
       }`}>
-        {/* 상단 디자인 바 */}
         <div className="h-2 bg-gradient-to-r from-purple-600 via-blue-600 to-emerald-600" />
         
         <div className="p-10">
           <div className="flex justify-between items-start mb-8">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-blue-700 rounded-[22px] flex items-center justify-center shadow-2xl shadow-purple-500/30 transform -rotate-6">
-                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
-                  <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
-                </svg>
+                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" /></svg>
               </div>
               <div>
                 <h3 className={`text-2xl font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>OneResume Connect</h3>
@@ -130,7 +139,7 @@ function ConnectModal({ isOpen, onClose, isDarkMode }) {
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-blue-600/10 text-blue-600 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">1</div>
                   <p className={`text-sm font-bold leading-relaxed ${isDarkMode ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                    채용 사이트(원티드, 사람인 등)에서 <span className="text-blue-600 underline underline-offset-4">원클릭으로 이력서를 입력</span>하려면 확장 프로그램이 필요합니다.
+                    채용 사이트에서 <span className="text-blue-600 underline underline-offset-4">원클릭으로 이력서를 입력</span>하려면 확장 프로그램이 필요합니다.
                   </p>
                 </div>
                 {!isExtensionInstalled && (
@@ -154,9 +163,7 @@ function ConnectModal({ isOpen, onClose, isDarkMode }) {
                 }`}
               >
                 <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${isSyncing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${isSyncing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 </div>
                 <span className="text-sm font-black">원클릭 동기화</span>
                 <span className="text-[10px] opacity-70 mt-1 font-bold">Extension Sync</span>
@@ -169,21 +176,15 @@ function ConnectModal({ isOpen, onClose, isDarkMode }) {
                 }`}
               >
                 <div className="w-12 h-12 bg-zinc-500/10 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
                 </div>
                 <span className="text-sm font-black">표준 데이터 복사</span>
                 <span className="text-[10px] opacity-70 mt-1 font-bold">Copy JSON</span>
               </button>
             </div>
           </div>
-
           <div className="mt-10 text-center">
-            <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
-              확장 프로그램은 사용자의 데이터를 안전하게 암호화하여 처리하며,<br/>
-              허용된 사이트 외에는 어떤 데이터도 전송하지 않습니다.
-            </p>
+            <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>확장 프로그램은 사용자의 데이터를 안전하게 암호화하여 처리합니다.</p>
           </div>
         </div>
       </div>
