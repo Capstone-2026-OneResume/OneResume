@@ -168,6 +168,7 @@ const ResumeForm = ({
           {isFirst ? (
             <button 
               type="submit"
+              onClick={handleSubmit}
               className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl font-black shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group text-sm lg:text-base"
             >
               이력서 저장
@@ -198,6 +199,7 @@ const ResumeForm = ({
           ) : (
             <button 
               type="submit"
+              onClick={handleSubmit}
               className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl font-black shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group text-sm lg:text-base"
             >
               이력서 저장

@@ -455,15 +455,11 @@ exports.saveResume = async (req, res) => {
     } catch (error) {
         console.error("❌ 이력서 저장 중 에러 발생:", error);
         
-        // 구체적인 에러 로깅
-        if (error.code) console.error("Error Code:", error.code);
-        if (error.meta) console.error("Error Meta:", error.meta);
-
         if (error.code === 'P2002') {
             return res.status(400).json({ 
-                message: "이미 사용 중인 이메일이거나 개인 도메인입니다. 다른 값을 입력해주세요." 
+                message: "이미 사용 중인 개인 도메인입니다. 다른 도메인을 입력해주세요." 
             });
         }
-        res.status(500).json({ message: "서버 저장 중 오류가 발생했습니다. 상세: " + error.message });
+        res.status(500).json({ message: "서버 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." });
     }
 };
