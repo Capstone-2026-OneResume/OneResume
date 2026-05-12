@@ -4,4 +4,7 @@ Disallow: /edit
 Disallow: /setup-profile
 Disallow: /reset-password
 
+User-agent: facebookexternalhit
+Allow: /
+
 Sitemap: https://oneresume.kr/sitemap.xml
