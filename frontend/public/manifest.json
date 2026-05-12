@@ -4,18 +4,18 @@
   "description": "나만의 서브도메인 기반 스마트 이력서 관리 플랫폼",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "logo.svg",
       "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "type": "image/svg+xml"
     },
     {
-      "src": "logo192.png",
-      "type": "image/png",
+      "src": "logo.svg",
+      "type": "image/svg+xml",
       "sizes": "192x192"
     },
     {
-      "src": "logo512.png",
-      "type": "image/png",
+      "src": "logo.svg",
+      "type": "image/svg+xml",
       "sizes": "512x512"
     }
   ],
