@@ -5,6 +5,7 @@ import ResumePreview from "../components/ResumePreview";
 import { API_BASE_URL } from "../config";
 import toast from "react-hot-toast";
 import ThemeToggle from "../components/ThemeToggle";
+import logo from "../logo.svg";
 
 function UserResumePage({ subdomain }) {
   const resumeRef = useRef();
@@ -169,7 +170,7 @@ function UserResumePage({ subdomain }) {
         isDarkMode ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-zinc-200'
       }`}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg font-black text-lg">O</div>
+          <img src={logo} alt="OneResume Logo" className="w-8 h-8 object-contain" />
           <h1 className={`text-base font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>OneResume</h1>
         </div>
 
