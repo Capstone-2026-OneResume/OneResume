@@ -1,7 +1,7 @@
 {
   "short_name": "OneResume",
-  "name": "OneResume - 스마트 이력서 관리 플랫폼",
-  "description": "나만의 서브도메인 기반 스마트 이력서 관리 플랫폼",
+  "name": "OneResume - 나를 증명하는 가장 완벽한 한 페이지",
+  "description": "단 한 번의 마스터 이력서 작성으로 사람인, 잡코리아 1초 자동 입력까지 경험해보세요.",
   "icons": [
     {
       "src": "logo.svg",
