@@ -673,7 +673,10 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
                     height: scaledHeight,
                     marginTop: isMobile ? '20px' : '40px', 
                     marginBottom: isMobile ? '120px' : '80px',
-                    backfaceVisibility: 'hidden'
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    transformStyle: 'preserve-3d',
+                    WebkitTransformStyle: 'preserve-3d'
                   }}
                 >
                   <div 
@@ -683,7 +686,10 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
                       transformOrigin: 'top left',
                       touchAction: 'pan-y',
                       backfaceVisibility: 'hidden',
-                      WebkitFontSmoothing: 'antialiased'
+                      WebkitBackfaceVisibility: 'hidden',
+                      WebkitFontSmoothing: 'antialiased',
+                      transformStyle: 'preserve-3d',
+                      WebkitTransformStyle: 'preserve-3d'
                     }}
                   >
                     <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} paneWidth={isMobile ? 20 : (100 - leftWidth)} focusedPage={focusedPage} setFocusedPage={setFocusedPage} setTotalPages={setTotalPages} containerHeight={windowSize.height - 56} scale={baseScale} marginTop={40} />
