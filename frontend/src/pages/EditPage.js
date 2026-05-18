@@ -665,14 +665,15 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
               )}
 
               <div className={`w-full h-full flex justify-center items-start custom-scrollbar select-none overflow-x-hidden ${focusedPage ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-                {/* Sizing Wrapper: 브라우저 오버플로우 방지용 실제 차지 크기 할당 */}
+                {/* Sizing Wrapper: 브라우저 오버플로우 방지 및 애니메이션 안정화 */}
                 <div 
-                  className="relative flex-shrink-0"
+                  className={`relative flex-shrink-0 transform-gpu ${transitionClass}`}
                   style={{
                     width: scaledWidth,
                     height: scaledHeight,
                     marginTop: isMobile ? '20px' : '40px', 
                     marginBottom: isMobile ? '120px' : '80px',
+                    backfaceVisibility: 'hidden'
                   }}
                 >
                   <div 
@@ -680,7 +681,9 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
                     style={{ 
                       transform: `scale(${baseScale})`, 
                       transformOrigin: 'top left',
-                      touchAction: 'pan-y'
+                      touchAction: 'pan-y',
+                      backfaceVisibility: 'hidden',
+                      WebkitFontSmoothing: 'antialiased'
                     }}
                   >
                     <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} paneWidth={isMobile ? 20 : (100 - leftWidth)} focusedPage={focusedPage} setFocusedPage={setFocusedPage} setTotalPages={setTotalPages} containerHeight={windowSize.height - 56} scale={baseScale} marginTop={40} />
