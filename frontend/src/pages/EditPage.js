@@ -665,17 +665,26 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
               )}
 
               <div className={`w-full h-full flex justify-center items-start custom-scrollbar select-none overflow-x-hidden ${focusedPage ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+                {/* Sizing Wrapper: 브라우저 오버플로우 방지용 실제 차지 크기 할당 */}
                 <div 
-                  className={`${transitionClass} transform-gpu flex items-center justify-center shrink-0 pointer-events-auto ${isDragging ? 'opacity-30 grayscale' : 'opacity-100'}`} 
-                  style={{ 
-                    transform: `scale(${baseScale})`, 
-                    transformOrigin: 'top center', 
+                  className="relative flex-shrink-0"
+                  style={{
+                    width: scaledWidth,
+                    height: scaledHeight,
                     marginTop: isMobile ? '20px' : '40px', 
                     marginBottom: isMobile ? '120px' : '80px',
-                    touchAction: 'pan-y'
                   }}
                 >
-                  <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} paneWidth={isMobile ? 20 : (100 - leftWidth)} focusedPage={focusedPage} setFocusedPage={setFocusedPage} setTotalPages={setTotalPages} containerHeight={windowSize.height - 56} scale={baseScale} marginTop={40} />
+                  <div 
+                    className={`${transitionClass} transform-gpu flex items-start justify-center pointer-events-auto absolute top-0 left-0 ${isDragging ? 'opacity-30 grayscale' : 'opacity-100'}`} 
+                    style={{ 
+                      transform: `scale(${baseScale})`, 
+                      transformOrigin: 'top left',
+                      touchAction: 'pan-y'
+                    }}
+                  >
+                    <ResumePreview formData={formData} ref={resumeRef} isDarkMode={isDarkMode} paneWidth={isMobile ? 20 : (100 - leftWidth)} focusedPage={focusedPage} setFocusedPage={setFocusedPage} setTotalPages={setTotalPages} containerHeight={windowSize.height - 56} scale={baseScale} marginTop={40} />
+                  </div>
                 </div>
               </div>
             </div>
