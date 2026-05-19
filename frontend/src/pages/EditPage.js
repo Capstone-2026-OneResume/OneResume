@@ -40,23 +40,23 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
 
   // --- 확장 프로그램 실시간 감지 로직 ---
   useEffect(() => {
-    const handlePong = () => {
-      setIsExtensionInstalled(true);
+    const handlePong = (event) => {
+      // 확장 프로그램이 1초마다 보내는 PONG 감지
+      if (event.type === 'ONERESUME_PONG' || event.data?.type === 'ONERESUME_PONG') {
+        setIsExtensionInstalled(true);
+      }
     };
 
     window.addEventListener('ONERESUME_PONG', handlePong);
+    window.addEventListener('message', handlePong);
 
-    const pingInterval = setInterval(() => {
-      if (!isExtensionInstalled) {
-        window.dispatchEvent(new CustomEvent('ONERESUME_PING'));
-      }
-    }, 1000);
+    // 이제 웹사이트에서 PING을 먼저 보낼 필요가 없음 (확장 프로그램이 알아서 Heartbeat 방송함)
 
     return () => {
       window.removeEventListener('ONERESUME_PONG', handlePong);
-      clearInterval(pingInterval);
+      window.removeEventListener('message', handlePong);
     };
-  }, [isExtensionInstalled]);
+  }, []);
 
   const [windowSize, setWindowSize] = useState({ 
     width: window.innerWidth, 

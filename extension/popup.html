@@ -68,6 +68,57 @@
       align-items: center;
       gap: 12px;
     }
+    
+    /* [사진 디자인 반영] iOS/Modern 스타일 토글 */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toggle-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1; /* 확실한 회색 배경 (비활성화 느낌) */
+      transition: .4s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white; /* 비활성 시 흰색 노브 */
+      transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    input:checked + .slider {
+      background-color: #bfdbfe; /* 사진의 연한 블루 배경 */
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+      background-color: #1e3a8a; /* 사진의 진한 블루 노브 */
+    }
+
     .logo-box {
       width: 40px;
       height: 40px;
@@ -87,7 +138,45 @@
     }
     h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
     
-    .content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+    .content { 
+      padding: 20px; 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column;
+      position: relative;
+    }
+    
+    /* [수정] 비활성화 마스크 스타일 - 양방향 페이드 & 블러 전환 효과 */
+    #disabled-mask {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex; /* 항상 flex 유지 */
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 20px;
+      gap: 12px;
+      color: #1e293b;
+      
+      /* 양방향 애니메이션 핵심 */
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none; /* 꺼져있을 땐 클릭 방해 안 함 */
+      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                  visibility 0.4s, 
+                  backdrop-filter 0.4s;
+    }
+    
+    /* 활성화 시 스타일 */
+    #disabled-mask.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto; /* 마스크 떴을 땐 클릭 차단 */
+    }
     
     .status-section {
       display: flex;
@@ -132,6 +221,11 @@
     .btn-primary:active { transform: scale(0.98); }
     .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
     
+    .brand-text {
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+    
     .btn-outline {
       background: var(--btn-outline-bg);
       color: var(--btn-outline-text);
@@ -165,30 +259,55 @@
         </div>
         <h2>OneResume Connect</h2>
       </div>
+      <div class="toggle-container">
+        <label class="switch">
+          <input type="checkbox" id="master-toggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
 
     <div class="content">
-      <div class="status-section">
-        <div class="status-info">
-          <div id="status-dot" class="status-dot"></div>
-          <span id="status-text">연동 상태 확인 중...</span>
+      <!-- 비활성화 마스크 -->
+      <div id="disabled-mask">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span style="font-weight: 700; font-size: 15px;">연동 기능이 꺼져 있습니다</span>
+      </div>
+
+      <div id="main-ui">
+        <div class="status-section">
+          <div class="status-info">
+            <div id="status-dot" class="status-dot"></div>
+            <span id="status-text">연동 상태 확인 중...</span>
+          </div>
+          <div id="last-sync" class="sync-badge"></div>
         </div>
-        <div id="last-sync" class="sync-badge"></div>
+
+        <div class="action-group">
+          <button id="autofill-btn" class="btn btn-primary" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+            현재 페이지에 자동 입력
+          </button>
+          <button id="refresh-btn" class="btn btn-outline">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+            데이터 새로고침
+          </button>
+        </div>
+
+        <div id="data-display" class="data-preview">웹사이트에서 [원클릭 동기화]를 진행하면 여기에 데이터가 나타납니다.</div>
       </div>
 
-      <div class="action-group">
-        <button id="autofill-btn" class="btn btn-primary" disabled>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
-          현재 페이지에 자동 입력
+      <div id="error-ui" style="display: none; flex-direction: column; gap: 20px; align-items: center; text-align: center; padding: 20px 0;">
+        <div style="background: rgba(239, 68, 68, 0.1); padding: 20px; border-radius: 50%; color: #ef4444;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        </div>
+        <div>
+          <h3 style="margin: 0 0 8px 0;">세션이 만료되었습니다</h3>
+          <p style="margin: 0; font-size: 14px; color: var(--text-muted);">홈페이지에서 다시 [원클릭 동기화]를<br>진행해주시기 바랍니다.</p>
+        </div>
+        <button id="go-home-btn" class="btn btn-primary">
+          <span class="brand-text">OneResume</span> 홈페이지로 이동
         </button>
-        <button id="refresh-btn" class="btn btn-outline">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-          이력서 데이터 새로고침
-        </button>
-      </div>
-
-      <div id="data-display" class="data-preview">
-        웹사이트에서 [원클릭 동기화]를 진행하면 여기에 데이터가 나타납니다.
       </div>
     </div>
     

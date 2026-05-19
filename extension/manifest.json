@@ -1,15 +1,17 @@
 {
   "manifest_version": 3,
   "name": "OneResume Connect",
-  "version": "1.1.3",
+  "version": "1.1.6",
   "description": "OneResume 마스터 이력서를 채용 사이트에 자동으로 동기화합니다.",
-  "permissions": ["storage", "activeTab", "scripting", "webNavigation"],
+  "permissions": ["storage", "activeTab", "webNavigation"],
   "background": {
     "service_worker": "background.js"
   },
   "host_permissions": [
     "*://api.oneresume.kr/*",
     "*://localhost/*",
+    "*://oneresume.kr/*",
+    "*://*.oneresume.kr/*",
     "*://*.saramin.co.kr/*",
     "*://*.jobkorea.co.kr/*",
     "*://*.wanted.co.kr/*"
@@ -33,6 +35,7 @@
     {
       "matches": [
         "*://localhost/*",
+        "*://oneresume.kr/*",
         "*://*.oneresume.kr/*",
         "*://*.saramin.co.kr/*",
         "*://*.jobkorea.co.kr/*",

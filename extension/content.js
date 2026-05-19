@@ -1,60 +1,105 @@
-console.log("🚀 OneResume Connect: Engine v1.4.3 (Sync-Injection) Loaded");
+/**
+ * ---------------------------------------------------------
+ * OneResume Connect: Engine v1.5.0 (Reactive & Controlled)
+ * ---------------------------------------------------------
+ */
 
-const encodeToken = (str) => {
-  try { return btoa(str); } catch(e) { return str; }
+console.log("🚀 OneResume Connect: Engine v1.5.0 Loaded");
+
+let cachedResumeData = null;
+let isExtensionActive = true;
+
+/**
+ * [성능 최적화] 데이터 가져오기 (Reactive 방식)
+ */
+const fetchResumeDataFromBg = () => {
+  try {
+    if (!window.chrome?.runtime?.id || !window.chrome?.storage?.local) return;
+
+    chrome.storage.local.get(['oneresume_token', 'or_extension_active'], (result) => {
+      if (chrome.runtime.lastError) return;
+
+      isExtensionActive = result.or_extension_active !== false;
+      
+      // 꺼져있으면 데이터 요청도 안 함
+      if (!isExtensionActive) {
+        removeEngineUI();
+        return;
+      }
+
+      if (result.oneresume_token) {
+        try {
+          const token = atob(result.oneresume_token);
+          chrome.runtime.sendMessage({ action: "FETCH_RESUME_DATA", token: token }, (response) => {
+            if (chrome.runtime.lastError) return;
+            if (response && response.success) {
+              cachedResumeData = response.data;
+              console.log("📦 OR Connect: Data Synced");
+              initSmartEngine(); // 활성화 상태면 엔진 초기화
+            }
+          });
+        } catch (e) {}
+      }
+    });
+  } catch (err) {}
 };
 
-window.addEventListener('ONERESUME_PING', () => {
-  try {
-    if (window.chrome && chrome.runtime && chrome.runtime.id) {
-      window.dispatchEvent(new CustomEvent('ONERESUME_PONG'));
+/**
+ * [실시간 동기화] 스토리지 변경 감지 (Polling 대체)
+ */
+try {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && (changes.oneresume_token || changes.or_extension_active)) {
+      fetchResumeDataFromBg();
     }
-  } catch (e) {}
-});
+  });
+} catch (e) {}
 
+/**
+ * [원클릭 동기화] 웹사이트로부터 토큰 수신
+ */
 window.addEventListener('message', (event) => {
-  try {
-    if (!event || !event.data || typeof event.data !== 'object') return;
-    if (event.data.type === 'ONERESUME_SYNC_TOKEN') {
-      const { token } = event.data;
-      if (window.chrome && chrome.runtime && chrome.runtime.id) {
-        chrome.storage.local.set({ 'oneresume_token': encodeToken(token) }, () => {
-          window.postMessage({ type: 'ONERESUME_SYNC_SUCCESS' }, "*");
-          fetchResumeDataFromBg(); // 토큰 동기화 시 데이터 갱신
-        });
-      }
+  if (event.data && event.data.type === 'ONERESUME_SYNC_TOKEN') {
+    const token = event.data.token;
+    if (token) {
+      const encodedToken = btoa(token);
+      chrome.storage.local.set({ oneresume_token: encodedToken }, () => {
+        console.log("✅ OR Connect: Token Synced from Website");
+        fetchResumeDataFromBg(); // 동기화 즉시 데이터 로드
+        
+        // 웹사이트에 성공 알림 보내기 (웹사이트의 ConnectModal.js가 이 메시지를 기다림)
+        window.postMessage({ type: 'ONERESUME_SYNC_SUCCESS' }, "*");
+      });
     }
-  } catch (err) {}
+  }
 });
 
 /**
- * ---------------------------------------------------------
- * [버전 1.4.3] 데이터 캐싱 시스템 (비동기 제스처 유실 방지)
- * ---------------------------------------------------------
+ * [실시간 감지] 확장 프로그램 생존 신고 (Heartbeat)
+ * 웹사이트의 Ping을 기다리지 않고, 1초마다 스스로 활성화 상태를 방송합니다.
+ * 이 방식이 브라우저 컨텍스트 격리 환경에서 가장 확실하게 작동합니다.
  */
-let cachedResumeData = null;
+setInterval(() => {
+  window.postMessage({ type: 'ONERESUME_PONG' }, "*");
+  window.dispatchEvent(new CustomEvent('ONERESUME_PONG'));
+}, 1000);
 
-const fetchResumeDataFromBg = () => {
-  if (!window.chrome || !chrome.runtime || !chrome.storage) return;
-  chrome.storage.local.get(['oneresume_token'], (result) => {
-    if (result.oneresume_token) {
-      try {
-        const token = atob(result.oneresume_token);
-        chrome.runtime.sendMessage({ action: "FETCH_RESUME_DATA", token: token }, (response) => {
-          if (response && response.success) {
-            cachedResumeData = response.data;
-            console.log("📦 OR Connect: Resume Data Cached for Synchronous Injection");
-          }
-        });
-      } catch (e) {}
-    }
-  });
+// 초기 실행
+fetchResumeDataFromBg();
+
+/**
+ * [UI 제거] 엔진 비활성화 시 UI 삭제
+ */
+const removeEngineUI = () => {
+  const overlay = document.getElementById('or-magic-overlay');
+  const fab = document.getElementById('or-magic-fab-container');
+  if (overlay) overlay.remove();
+  if (fab) fab.remove();
 };
 
-// 스크립트 로드 시 즉시 데이터 캐싱 시작 (1분마다 갱신)
-fetchResumeDataFromBg();
-setInterval(fetchResumeDataFromBg, 60000);
-
+/**
+ * [자동 입력 엔진] 필드 매핑 및 주입 로직
+ */
 const AUTOFILL_CONFIG = {
   'wanted.co.kr': {
     'input[name="name"]': 'basics.name',
@@ -164,10 +209,25 @@ const findTargetElements = (selector, useFuzzy = true) => {
   return elements;
 };
 
+/**
+ * [시각적 피드백] 입력 필드 하이라이트 주입
+ * 유지 시간을 1.5초에서 3초로 연장하여 시인성 강화
+ */
+const highlightElement = (element) => {
+  if (!element) return;
+  element.style.transition = 'box-shadow 0.4s ease, border-color 0.4s ease';
+  element.style.boxShadow = '0 0 0 5px rgba(16, 185, 129, 0.5)';
+  element.style.borderColor = '#10b981';
+  
+  setTimeout(() => {
+    element.style.boxShadow = '';
+    element.style.borderColor = '';
+  }, 3000); // 3초간 유지
+};
+
 const forceInput = (element, value, domainType) => {
   if (!element) return;
   try {
-    // 팝업 버튼처럼 동기식으로 실행되므로 브라우저가 포커스를 허용함
     element.focus();
     if (domainType === 'jobkorea') element.click();
 
@@ -184,6 +244,8 @@ const forceInput = (element, value, domainType) => {
       element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
       element.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
     }
+    
+    highlightElement(element); // 하이라이트 효과 적용
     element.blur();
   } catch (err) {
     element.value = value;
@@ -191,11 +253,10 @@ const forceInput = (element, value, domainType) => {
 };
 
 const runAutofill = async (resumeData) => {
-  if (!resumeData) return;
+  if (!resumeData || !isExtensionActive) return;
   const host = window.location.hostname;
   const domainType = host.includes('saramin.co.kr') ? 'saramin' : (host.includes('jobkorea.co.kr') ? 'jobkorea' : 'other');
 
-  // [전역 보안] 중복 입력 및 리스트 팝업 방지를 위해 메인 프레임에서만 실행
   if (window.self !== window.top) return;
 
   const configEntry = Object.entries(AUTOFILL_CONFIG).find(([domain]) => host.includes(domain));
@@ -231,10 +292,17 @@ const runAutofill = async (resumeData) => {
 };
 
 // 팝업 버튼 클릭으로 들어오는 요청 처리
-if (window.chrome && chrome.runtime && chrome.runtime.onMessage) {
+if (window.chrome?.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "RUN_AUTOFILL") {
-      runAutofill(request.resumeData);
+      runAutofill(request.resumeData).then(() => {
+        const host = window.location.hostname;
+        let siteName = null;
+        let themeColor = null;
+        if (host.includes('saramin.co.kr')) { siteName = '사람인'; themeColor = '#4876ef'; }
+        else if (host.includes('jobkorea.co.kr')) { siteName = '잡코리아'; themeColor = '#ff4b13'; }
+        if (siteName) createOverlay(siteName, themeColor, 'success');
+      });
       sendResponse({ status: "success" });
     }
     return true;
@@ -242,112 +310,198 @@ if (window.chrome && chrome.runtime && chrome.runtime.onMessage) {
 }
 
 /**
- * ---------------------------------------------------------
- * [프리미엄 디자인 완전 복구] Ultra-Seamless Overlay
- * ---------------------------------------------------------
+ * [UI/UX] Overlay 및 FAB 생성
  */
-const createOverlay = (siteName, themeColor) => {
-  const overlay = document.createElement('div');
-  overlay.id = 'or-magic-overlay';
-  let siteLogo = siteName === '사람인' ? chrome.runtime.getURL('icons/saramin.webp') : 'https://www.jobkorea.co.kr/favicon.ico';
+const createOverlay = (siteName, themeColor, mode = 'ready') => {
+  const existingOverlay = document.getElementById('or-magic-overlay');
+  if (existingOverlay) existingOverlay.remove();
 
-  overlay.innerHTML = `
-    <div class="or-box">
-      <div class="or-inner-content">
-        <div class="or-logo or-brand">
-          <img src="${chrome.runtime.getURL('icons/logo.png')}" alt="OR" style="width: 100%; height: 100%; object-fit: cover;">
-        </div>
-        <div class="or-reveal-group">
-          <div class="or-arrow">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+  try {
+    const overlay = document.createElement('div');
+    overlay.id = 'or-magic-overlay';
+    let siteLogo = siteName === '사람인' ? chrome.runtime.getURL('icons/saramin.webp') : 'https://www.jobkorea.co.kr/favicon.ico';
+
+    const textContent = mode === 'success' ? `<strong>${siteName}</strong> 자동입력이 완료되었습니다` : `<strong>${siteName}</strong> 자동입력 준비완료`;
+    const iconContent = mode === 'success'
+      ? `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+      : `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+    const arrowClass = mode === 'success' ? '' : 'or-bounce-x';
+    const boxStyle = mode === 'success' ? 'border: 2px solid rgba(16,185,129,0.4); box-shadow: 0 20px 50px rgba(16,185,129,0.15);' : '';
+
+    overlay.innerHTML = `
+      <div class="or-box" style="${boxStyle}">
+        <div class="or-inner-content">
+          <div class="or-logo or-brand">
+            <img src="${chrome.runtime.getURL('icons/logo.png')}" alt="OR" style="width: 100%; height: 100%; object-fit: cover;">
           </div>
-          <div class="or-logo or-site-logo" style="background: transparent;">
-            <img src="${siteLogo}" alt="Site" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <div class="or-divider"></div>
-          <div class="or-text">
-            <strong>${siteName}</strong> 자동입력 준비완료
+          <div class="or-reveal-group">
+            <div class="or-arrow ${arrowClass}">
+              ${iconContent}
+            </div>
+            <div class="or-logo or-site-logo" style="background: transparent;">
+              <img src="${siteLogo}" alt="Site" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div class="or-divider"></div>
+            <div class="or-text">
+              ${textContent}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
 
-  const style = document.createElement('style');
-  style.textContent = `
-    #or-magic-overlay { position: fixed; top: 64px; left: 50%; transform: translateX(-50%) translateY(-20px); z-index: 2147483647; opacity: 0; pointer-events: none; transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.19, 1, 0.22, 1); font-family: 'Pretendard', sans-serif; }
-    #or-magic-overlay.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-    #or-magic-overlay .or-box { background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(24px); padding: 10px; border-radius: 28px; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: flex-start; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.4); width: 80px; height: 80px; box-sizing: border-box; transition: width 0.9s cubic-bezier(0.19, 1, 0.22, 1); }
-    #or-magic-overlay.expanded .or-box { width: 580px; }
-    #or-magic-overlay .or-inner-content { display: flex; align-items: center; flex-wrap: nowrap; flex-shrink: 0; width: 600px; height: 100%; }
-    #or-magic-overlay .or-logo { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
-    #or-magic-overlay .or-brand { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
-    #or-magic-overlay .or-site-logo { background: transparent; }
-    #or-magic-overlay .or-reveal-group { display: flex; align-items: center; gap: 20px; opacity: 0; transform: translateX(-30px); transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.19, 1, 0.22, 1); width: 0; overflow: hidden; padding-left: 20px; }
-    #or-magic-overlay.expanded .or-reveal-group { opacity: 1; transform: translateX(0); width: 480px; }
-    #or-magic-overlay .or-arrow { color: #60a5fa; width: 28px; display: flex; }
-    #or-magic-overlay .or-divider { width: 2px; height: 36px; background: rgba(255,255,255,0.18); }
-    #or-magic-overlay .or-text { color: white; font-size: 22px; font-weight: 700; }
-    #or-magic-overlay .or-text strong { color: #60a5fa; font-weight: 900; margin-right: 8px; }
-  `;
-  document.head.appendChild(style);
-  document.body.appendChild(overlay);
-  setTimeout(() => { overlay.classList.add('visible'); setTimeout(() => overlay.classList.add('expanded'), 1000); }, 100);
-  setTimeout(() => { overlay.classList.remove('expanded'); setTimeout(() => { overlay.classList.remove('visible'); setTimeout(() => overlay.remove(), 1000); }, 1000); }, 5500);
+    if (!document.getElementById('or-magic-overlay-style')) {
+      const style = document.createElement('style');
+      style.id = 'or-magic-overlay-style';
+      style.textContent = `
+        #or-magic-overlay { position: fixed; top: 64px; left: 50%; transform: translateX(-50%) translateY(-20px); z-index: 2147483647; opacity: 0; pointer-events: none; transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.19, 1, 0.22, 1); font-family: 'Pretendard', sans-serif; }
+        #or-magic-overlay.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #or-magic-overlay .or-box { background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(24px); padding: 10px; border-radius: 28px; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: flex-start; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.4); width: 80px; height: 80px; box-sizing: border-box; transition: width 0.9s cubic-bezier(0.19, 1, 0.22, 1), border-color 0.5s ease, box-shadow 0.5s ease; }
+        #or-magic-overlay.expanded .or-box { width: 580px; }
+        #or-magic-overlay .or-inner-content { display: flex; align-items: center; flex-wrap: nowrap; flex-shrink: 0; width: 600px; height: 100%; }
+        #or-magic-overlay .or-logo { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        #or-magic-overlay .or-brand { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+        #or-magic-overlay .or-site-logo { background: transparent; }
+        #or-magic-overlay .or-reveal-group { display: flex; align-items: center; gap: 20px; opacity: 0; transform: translateX(-30px); transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.19, 1, 0.22, 1); width: 0; overflow: hidden; padding-left: 20px; }
+        #or-magic-overlay.expanded .or-reveal-group { opacity: 1; transform: translateX(0); width: 480px; }
+        #or-magic-overlay .or-arrow { color: #60a5fa; width: 28px; display: flex; justify-content: center; }
+        #or-magic-overlay .or-divider { width: 2px; height: 36px; background: rgba(255,255,255,0.18); }
+        #or-magic-overlay .or-text { color: white; font-size: 22px; font-weight: 700; }
+        #or-magic-overlay .or-text strong { color: #60a5fa; font-weight: 900; margin-right: 8px; }
+        
+        .or-bounce-x { animation: or-bounce-x 1s infinite; }
+        @keyframes or-bounce-x {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(6px); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    document.body.appendChild(overlay);
+    
+    // Force reflow for animation restart if needed
+    void overlay.offsetWidth;
+
+    setTimeout(() => { 
+      overlay.classList.add('visible'); 
+      setTimeout(() => overlay.classList.add('expanded'), 450); 
+    }, 100);
+    
+    setTimeout(() => { 
+      overlay.classList.remove('expanded'); 
+      setTimeout(() => { 
+        overlay.classList.remove('visible'); 
+        setTimeout(() => overlay.remove(), 1000); 
+      }, 1000); 
+    }, mode === 'success' ? 4000 : 5500);
+  } catch (e) {}
 };
 
 const createFAB = () => {
   if (document.getElementById('or-magic-fab-container')) return;
-  const container = document.createElement('div');
-  container.id = 'or-magic-fab-container';
-  container.innerHTML = `<div class="or-fab-tooltip">OneResume Connect 자동입력</div><button id="or-magic-fab"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg></button>`;
-  const style = document.createElement('style');
-  style.textContent = `
-    #or-magic-fab-container { position: fixed; bottom: 40px; right: 40px; display: flex; align-items: center; gap: 12px; z-index: 2147483646; }
-    #or-magic-fab { width: 60px; height: 60px; border-radius: 18px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: 2.5px solid rgba(255,255,255,0.1); box-shadow: 0 12px 30px rgba(37, 99, 235, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    .or-fab-tooltip { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); color: white; padding: 8px 16px; border-radius: 12px; font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 700; opacity: 0; transform: translateX(10px); transition: all 0.3s; pointer-events: none; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1); }
-    #or-magic-fab-container:hover .or-fab-tooltip { opacity: 1; transform: translateX(0); }
-    #or-magic-fab:hover { transform: translateY(-6px) scale(1.1); box-shadow: 0 20px 40px rgba(37, 99, 235, 0.5); }
-    .or-fab-spin svg { animation: or-spin 1s linear infinite; } @keyframes or-spin { 100% { transform: rotate(360deg); } }
-  `;
-  document.head.appendChild(style);
-  document.body.appendChild(container);
-  
-  // [완벽 해결] 팝업과 동일한 동기 실행 로직 적용
-  document.getElementById('or-magic-fab').addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  try {
+    const container = document.createElement('div');
+    container.id = 'or-magic-fab-container';
+    container.innerHTML = `
+      <div class="or-fab-tooltip">
+        <span class="or-tooltip-text">OneResume Connect 자동입력</span>
+        <div class="or-tooltip-arrow or-bounce-x">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </div>
+      </div>
+      <button id="or-magic-fab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+      </button>
+    `;
+    const style = document.createElement('style');
+    style.textContent = `
+      #or-magic-fab-container { position: fixed; bottom: 40px; right: 40px; display: flex; align-items: center; gap: 12px; z-index: 2147483646; }
+      #or-magic-fab { width: 60px; height: 60px; border-radius: 18px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: 2.5px solid rgba(255,255,255,0.1); box-shadow: 0 12px 30px rgba(37, 99, 235, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+      .or-fab-tooltip { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); color: white; padding: 10px 18px; border-radius: 14px; font-family: 'Pretendard', sans-serif; font-size: 14px; font-weight: 800; opacity: 0; transform: translateX(10px); transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1); pointer-events: none; white-space: nowrap; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+      #or-magic-fab-container:hover .or-fab-tooltip { opacity: 1; transform: translateX(0); }
+      #or-magic-fab:hover { transform: translateY(-6px) scale(1.1); box-shadow: 0 20px 40px rgba(37, 99, 235, 0.5); }
+      .or-fab-spin svg { animation: or-spin 1s linear infinite; } @keyframes or-spin { 100% { transform: rotate(360deg); } }
+      .or-tooltip-arrow { color: #60a5fa; display: flex; }
+      
+      /* 강제 표시 클래스 (완료 알림용) */
+      #or-magic-fab-container.or-force-show .or-fab-tooltip {
+        opacity: 1 !important;
+        transform: translateX(0) !important;
+        background: rgba(16, 185, 129, 0.95) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+      }
+      #or-magic-fab-container.or-force-show .or-tooltip-text { color: white !important; }
+      #or-magic-fab-container.or-force-show .or-tooltip-arrow { display: none !important; }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(container);
     
-    if (!cachedResumeData) {
-      alert("데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요. (또는 팝업창에서 원클릭 동기화를 진행해주세요)");
-      fetchResumeDataFromBg();
-      return;
-    }
+    const fabBtn = document.getElementById('or-magic-fab');
+    const tooltipText = document.querySelector('.or-tooltip-text');
+    
+    fabBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!cachedResumeData) {
+        alert("데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+        fetchResumeDataFromBg();
+        return;
+      }
 
-    const fab = document.getElementById('or-magic-fab');
-    fab.classList.add('or-fab-spin');
-    
-    // 비동기 딜레이 없이 즉시 캐시된 데이터를 주입 (사용자 제스처 토큰 유지 -> focus 정상 작동)
-    runAutofill(cachedResumeData);
-    
-    fab.classList.remove('or-fab-spin');
-    const oldIcon = fab.innerHTML;
-    fab.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-    fab.style.background = '#10b981';
-    setTimeout(() => { fab.innerHTML = oldIcon; fab.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)'; }, 3000);
-  });
+      // 1. 상태 전환: 로딩/실행 중
+      fabBtn.classList.add('or-fab-spin');
+      const originalIcon = fabBtn.innerHTML;
+      const originalBg = fabBtn.style.background;
+      const originalText = tooltipText.textContent;
+      
+      // 2. 자동 입력 실행
+      await runAutofill(cachedResumeData);
+      
+      // 3. 중앙 오버레이 띄우기 (사람인/잡코리아 감지)
+      const host = window.location.hostname;
+      let siteName = null;
+      let themeColor = null;
+      if (host.includes('saramin.co.kr')) { siteName = '사람인'; themeColor = '#4876ef'; }
+      else if (host.includes('jobkorea.co.kr')) { siteName = '잡코리아'; themeColor = '#ff4b13'; }
+      if (siteName) createOverlay(siteName, themeColor, 'success');
+
+      // 4. FAB 상태 전환: 완료 알림
+      fabBtn.classList.remove('or-fab-spin');
+      fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+      fabBtn.style.background = '#10b981';
+      fabBtn.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.6)';
+      
+      tooltipText.textContent = "자동입력이 완료되었습니다";
+      container.classList.add('or-force-show');
+      
+      // 5. 원복 (3.5초 후)
+      setTimeout(() => {
+        fabBtn.innerHTML = originalIcon;
+        fabBtn.style.background = originalBg;
+        fabBtn.style.boxShadow = '';
+        tooltipText.textContent = originalText;
+        container.classList.remove('or-force-show');
+      }, 3500);
+    });
+  } catch (e) {}
 };
 
 const initSmartEngine = () => {
-  const host = window.location.hostname;
-  let siteName = null;
-  let themeColor = null;
-  if (host.includes('saramin.co.kr')) { siteName = '사람인'; themeColor = '#4876ef'; }
-  else if (host.includes('jobkorea.co.kr')) { siteName = '잡코리아'; themeColor = '#ff4b13'; }
-  if (siteName && window.self === window.top) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { createOverlay(siteName, themeColor); createFAB(); });
-    else setTimeout(() => { createOverlay(siteName, themeColor); createFAB(); }, 500);
-  }
+  if (!isExtensionActive) return;
+  try {
+    const host = window.location.hostname;
+    let siteName = null;
+    let themeColor = null;
+    if (host.includes('saramin.co.kr')) { siteName = '사람인'; themeColor = '#4876ef'; }
+    else if (host.includes('jobkorea.co.kr')) { siteName = '잡코리아'; themeColor = '#ff4b13'; }
+    
+    if (siteName && window.self === window.top) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => { createOverlay(siteName, themeColor); createFAB(); });
+      } else {
+        setTimeout(() => { createOverlay(siteName, themeColor); createFAB(); }, 500);
+      }
+    }
+  } catch (e) {}
 };
-
-initSmartEngine();
