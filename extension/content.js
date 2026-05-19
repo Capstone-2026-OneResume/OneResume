@@ -570,14 +570,14 @@ const createAIWidget = () => {
 
     const style = document.createElement('style');
     style.textContent = `
-      #or-ai-widget-container { position: fixed; top: 120px; right: 40px; z-index: 2147483646; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
+      #or-ai-widget-container { position: fixed; top: 120px; right: 40px; z-index: 2147483646; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none; }
       #or-ai-widget-container > * { pointer-events: auto; }
-      .or-ai-btn { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); color: white; padding: 10px 16px; border-radius: 20px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); user-select: none; }
+      .or-ai-btn { position: relative; z-index: 2; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); color: white; padding: 10px 16px; border-radius: 20px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); user-select: none; }
       .or-ai-btn:hover { background: #4f46e5; border-color: #6366f1; transform: translateY(-2px); box-shadow: 0 15px 30px rgba(79, 70, 229, 0.4); }
       .or-ai-btn:active { transform: scale(0.95); }
       
-      .or-ai-panel { background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(16px); border-radius: 18px; border: 1px solid rgba(255,255,255,0.15); padding: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), visibility 0.3s; transform-origin: top right; }
-      .or-ai-hidden { opacity: 0; transform: translateY(-10px) scale(0.95); visibility: hidden; pointer-events: none; position: absolute; }
+      .or-ai-panel { position: absolute; top: 52px; right: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(16px); border-radius: 18px; border: 1px solid rgba(255,255,255,0.15); padding: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); opacity: 1; transform: translateY(0) scale(1); visibility: visible; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0s; transform-origin: top right; z-index: 1; }
+      .or-ai-hidden { opacity: 0; transform: translateY(-10px) scale(0.95); visibility: hidden; pointer-events: none; transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.25s; }
       
       .or-ai-action-btn { background: transparent; border: none; color: white; padding: 12px 16px; text-align: left; border-radius: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.2s, transform 0.1s; display: flex; align-items: center; gap: 10px; width: 190px; }
       .or-ai-action-btn:hover { background: rgba(255,255,255,0.1); transform: translateX(2px); }
