@@ -40,7 +40,7 @@ const ResumeForm = ({
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const theme = {
-    formBg: isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200",
+    formBg: isDarkMode ? "bg-zinc-950 lg:bg-zinc-900 border-zinc-900 lg:border-zinc-800" : "bg-white border-zinc-200",
     tabActive: "text-white",
     tabInactive: isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-500 hover:text-zinc-700",
     titleText: isDarkMode ? "text-zinc-100" : "text-zinc-800",
@@ -290,7 +290,37 @@ const ResumeForm = ({
           };
           const info = sectionMap[section];
           if (!info) return null;
-          return (<Draggable key={section} draggableId={section} index={index}>{(provided, snapshot) => (<div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={provided.draggableProps.style} className={`flex items-center gap-4 p-4 rounded-xl md:rounded-2xl border-2 transition-all duration-200 ${snapshot.isDragging ? 'bg-blue-600 border-blue-400 text-white shadow-xl z-50 scale-105' : (isDarkMode ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-white border-gray-100 text-zinc-700') + ' hover:border-blue-500/50'}`}><div className={`w-8 h-8 flex items-center justify-center rounded-lg ${snapshot.isDragging ? 'bg-white/20' : 'bg-zinc-500/10'} text-lg`}>{info.icon}</div><span className="flex-1 font-black text-[14px]">{info.label}</span><div className="opacity-40"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4 8h16M4 16h16" /></svg></div></div>)}</Draggable>);
+          return (
+            <Draggable key={section} draggableId={section} index={index}>
+              {(provided, snapshot) => (
+                <div 
+                  ref={provided.innerRef} 
+                  {...provided.draggableProps} 
+                  {...provided.dragHandleProps} 
+                  style={provided.draggableProps.style} 
+                  className={`flex items-center gap-1.5 sm:gap-2.5 md:gap-4 p-1.5 sm:p-2.5 md:p-4 rounded-lg md:rounded-2xl border-2 transition-all duration-200 ${
+                    snapshot.isDragging 
+                      ? 'bg-blue-600 border-blue-400 text-white shadow-xl z-50 scale-105' 
+                      : (isDarkMode ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-white border-gray-100 text-zinc-700') + ' hover:border-blue-500/50'
+                  }`}
+                >
+                  <div className={`w-5 h-5 sm:w-6.5 sm:h-6.5 md:w-8 md:h-8 flex items-center justify-center rounded-md md:rounded-lg flex-shrink-0 ${
+                    snapshot.isDragging ? 'bg-white/20' : 'bg-zinc-500/10'
+                  }`}>
+                    {React.cloneElement(info.icon, { className: "w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" })}
+                  </div>
+                  <span className="flex-1 font-black text-[9.5px] sm:text-[12px] md:text-[14px] truncate whitespace-nowrap leading-none">
+                    {info.label}
+                  </span>
+                  <div className="opacity-30 flex-shrink-0">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path d="M4 8h16M4 16h16" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+            </Draggable>
+          );
         })} {provided.placeholder}</div>)}</Droppable>
       </DragDropContext>
     );

@@ -145,7 +145,7 @@ const ResumePreview = React.memo(React.forwardRef((props, ref) => {
             </div>
           )}
         </div>
-        <p className={`text-[15px] whitespace-pre-wrap leading-relaxed font-medium ${theme.textSub}`}>{work.jobDescription}</p>
+        <p className={`text-[15px] whitespace-pre-wrap leading-relaxed font-medium break-words ${theme.textSub}`}>{work.jobDescription}</p>
       </div>
     </div>
   ), [theme]);
@@ -177,7 +177,7 @@ const ResumePreview = React.memo(React.forwardRef((props, ref) => {
             {project.period && <span className={`text-xs font-black px-5 py-2 rounded-full border ${theme.boxBg}`}>{project.period}</span>}
           </div>
           <p className={`text-base mb-4 text-blue-500 font-bold`}>{project.role ? `${project.role} | ` : ''}{project.techStack}</p>
-          <p className={`text-[15px] whitespace-pre-wrap leading-relaxed font-medium ${theme.textSub}`}>{project.description}</p>
+          <p className={`text-[15px] whitespace-pre-wrap leading-relaxed font-medium break-words ${theme.textSub}`}>{project.description}</p>
         </div>
       )}
     </div>
@@ -193,7 +193,7 @@ const ResumePreview = React.memo(React.forwardRef((props, ref) => {
             <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">1</span>
             성장과정
           </h4>
-          <p className={`text-[15px] leading-[1.9] whitespace-pre-wrap font-medium ${theme.textSub}`}>{formData.selfIntroGrowth}</p>
+          <p className={`text-[15px] leading-[1.9] whitespace-pre-wrap font-medium break-words ${theme.textSub}`}>{formData.selfIntroGrowth}</p>
         </div>
       )}
       {formData.selfIntroCharacter && (
@@ -202,7 +202,7 @@ const ResumePreview = React.memo(React.forwardRef((props, ref) => {
             <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">2</span>
             성격의 장단점
           </h4>
-          <p className={`text-[15px] leading-[1.9] whitespace-pre-wrap font-medium ${theme.textSub}`}>{formData.selfIntroCharacter}</p>
+          <p className={`text-[15px] leading-[1.9] whitespace-pre-wrap font-medium break-words ${theme.textSub}`}>{formData.selfIntroCharacter}</p>
         </div>
       )}
       {formData.selfIntroMotivation && (
@@ -211,7 +211,7 @@ const ResumePreview = React.memo(React.forwardRef((props, ref) => {
             <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">3</span>
             지원동기 및 포부
           </h4>
-          <p className={`text-[15px] leading-[1.9] whitespace-pre-wrap font-medium ${theme.textSub}`}>{formData.selfIntroMotivation}</p>
+          <p className={`text-[15px] leading-[1.9] whitespace-pre-wrap font-medium break-words ${theme.textSub}`}>{formData.selfIntroMotivation}</p>
         </div>
       )}
     </section>

@@ -35,7 +35,7 @@ const ForgotPassword = ({ onSwitch, isDarkMode }) => {
     <div className="w-full max-w-md mx-auto space-y-10">
       <div className="space-y-3 text-center lg:text-left">
         <h2 className={`text-4xl font-black tracking-tight ${theme.titleText}`}>비밀번호 찾기</h2>
-        <p className={`text-lg font-bold ${theme.subText}`}>가입하신 이메일을 통해 링크를 전송합니다.</p>
+        <p className={`text-base lg:text-lg font-bold break-keep ${theme.subText}`}>가입하신 이메일을 통해 링크를 전송합니다.</p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-7">

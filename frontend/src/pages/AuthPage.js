@@ -319,38 +319,38 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
           </div>
         </div>
 
-        {/* 하단 푸터 - 법적 고지 및 안내 */}
-        <footer className={`absolute bottom-6 w-full text-center z-[110] transition-colors duration-300 print:hidden ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
-          <div className="flex items-center justify-center gap-5 text-[11px] font-semibold tracking-tight">
+        {/* 하단 푸터 - 법적 고지 및 안내 (모바일 겹침 방지를 위해 위치 조정) */}
+        <footer className={`w-full text-center z-[110] transition-colors duration-300 print:hidden mt-12 mb-8 lg:mt-0 lg:mb-0 lg:absolute lg:bottom-6 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 px-6 text-[11px] font-semibold tracking-tight">
             <button 
               onClick={() => openModal('terms')}
-              className="hover:text-blue-600 transition-colors cursor-pointer"
+              className="hover:text-blue-600 transition-colors cursor-pointer py-1 px-1"
             >
               이용약관
             </button>
-            <span className="w-1 h-1 rounded-full bg-current opacity-20"></span>
+            <span className="hidden sm:inline w-1 h-1 rounded-full bg-current opacity-20"></span>
             <button 
               onClick={() => openModal('privacy')}
-              className="hover:text-blue-600 transition-colors cursor-pointer font-bold"
+              className="hover:text-blue-600 transition-colors cursor-pointer font-bold py-1 px-1"
             >
               개인정보처리방침
             </button>
-            <span className="w-1 h-1 rounded-full bg-current opacity-20"></span>
+            <span className="hidden sm:inline w-1 h-1 rounded-full bg-current opacity-20"></span>
             <button 
               onClick={() => openModal('disclaimer')}
-              className="hover:text-blue-600 transition-colors cursor-pointer"
+              className="hover:text-blue-600 transition-colors cursor-pointer py-1 px-1"
             >
               책임의 한계와 법적고지
             </button>
-            <span className="w-1 h-1 rounded-full bg-current opacity-20"></span>
+            <span className="hidden sm:inline w-1 h-1 rounded-full bg-current opacity-20"></span>
             <button 
               onClick={() => openModal('contact')}
-              className="hover:text-blue-600 transition-colors cursor-pointer"
+              className="hover:text-blue-600 transition-colors cursor-pointer py-1 px-1"
             >
               고객문의
             </button>
           </div>
-          <p className="mt-2 text-[10px] opacity-50 font-medium tracking-wider">
+          <p className="mt-3 text-[10px] opacity-50 font-medium tracking-wider">
             © 2026 OneResume. All rights reserved.
           </p>
         </footer>

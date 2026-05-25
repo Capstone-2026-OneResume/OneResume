@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import ResumeForm from "../components/ResumeForm";
 import ResumePreview from "../components/ResumePreview";
 import toast from "react-hot-toast";
@@ -300,10 +302,10 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0 justify-end">
-          <div className="flex items-center gap-2 md:gap-3 hide-scrollbar whitespace-nowrap pl-2 md:pl-0 flex-shrink-0" ref={menuRef}>
+          <div className="flex items-center gap-2 md:gap-3 whitespace-nowrap pl-2 md:pl-0 flex-shrink-0" ref={menuRef}>
             
-            {/* 공용 컨트롤 영역 (Theme) - 데스크탑 전용 */}
-            <div className="hidden md:block">
+            {/* 공용 컨트롤 영역 (Theme) - PC 전용 (태블릿/모바일은 드롭다운으로 통합) */}
+            <div className="hidden lg:block">
               <ThemeToggle isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
             </div>
             
@@ -412,105 +414,115 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
                     </div>
                   )}
                 </div>
+
+                {/* 화살표 (Chevron) - 전 기기 노출, 열림 상태에 따라 회전 */}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 flex-shrink-0 ${
+                  isMenuOpen ? 'rotate-180 text-blue-600' : (isDarkMode ? 'text-zinc-500' : 'text-zinc-400')
+                }`} />
               </button>
 
-              {/* 드롭다운 메뉴 (UX 기반 정보 재배치: 계정 정보 -> 빠른 도구 -> 로그아웃) */}
-              {isMenuOpen && (
-                <div className={`absolute top-full right-0 mt-3 w-64 p-1.5 rounded-2xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-[110] ${
+              {/* 드롭다운 메뉴 (React Portal을 사용하여 스택 컨텍스트 감옥에서 완전 탈출) */}
+              {isMenuOpen && createPortal(
+                <div 
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className={`fixed top-14 right-3 sm:right-6 lg:right-10 mt-1.5 w-56 sm:w-64 lg:w-72 max-w-[calc(100vw-24px)] p-1 rounded-2xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-[9999] origin-top-right ${
                   isDarkMode ? 'bg-zinc-900 border-zinc-700 shadow-black/50' : 'bg-white border-zinc-100 shadow-zinc-200/50'
                 }`}>
                   
                   {/* 1. 계정 정보 (최상단 Identity 섹션) */}
-                  <div className="px-4 py-3 border-b border-zinc-500/10 mb-1">
-                    <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>계정 정보</p>
-                    <p className={`text-sm font-black truncate ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>{formData.username || '사용자'}</p>
-                    <div className="flex items-center gap-1.5 mt-2">
-                      <p className={`text-[10px] font-bold ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                        {formData.provider === 'KAKAO' ? '카카오 계정으로 로그인됨' : 
-                         formData.provider === 'NAVER' ? '네이버 계정으로 로그인됨' : 
-                         'OneResume 이메일로 로그인됨'}
+                  <div className="px-3 py-2.5 sm:px-4 sm:py-3.5 border-b border-zinc-500/10 mb-0.5">
+                    <p className={`text-[8px] lg:text-[10px] font-black uppercase tracking-widest mb-1.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>계정 정보</p>
+                    <p className={`text-[12px] sm:text-sm lg:text-base font-black truncate ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>{formData.username || '사용자'}</p>
+                    <div className="flex items-center gap-1 mt-1.5">
+                      <p className={`text-[8.5px] sm:text-[10px] lg:text-[11px] font-bold ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                        {formData.provider === 'KAKAO' ? (isMobile ? '카카오 로그인' : '카카오 계정으로 로그인됨') : 
+                         formData.provider === 'NAVER' ? (isMobile ? '네이버 로그인' : '네이버 계정으로 로그인됨') : 
+                         (isMobile ? 'OneResume 로그인' : 'OneResume 이메일로 로그인됨')}
                       </p>
                       <div className="flex items-center">
                         {formData.provider === 'KAKAO' && (
-                          <div className="w-3.5 h-3.5 bg-[#FEE500] rounded-[2px] flex items-center justify-center shadow-sm">
-                            <svg viewBox="0 0 24 24" className="w-2 h-2 text-[#3C1E1E]" fill="currentColor">
+                          <div className="w-3 h-3 bg-[#FEE500] rounded-[2px] flex items-center justify-center shadow-sm">
+                            <svg viewBox="0 0 24 24" className="w-1.5 h-1.5 text-[#3C1E1E]" fill="currentColor">
                               <path d="M12 3C7.029 3 3 6.129 3 10.129c0 2.59 1.676 4.88 4.232 6.13l-1.077 3.96c-.083.303.326.541.53.37l4.67-3.111c.532.062 1.078.093 1.645.093 4.971 0 9-3.129 9-7.129C21 6.129 16.971 3 12 3z" />
                             </svg>
                           </div>
                         )}
                         {formData.provider === 'NAVER' && (
-                          <div className="w-3.5 h-3.5 bg-[#03C75A] rounded-[2px] flex items-center justify-center shadow-sm">
-                            <span className="text-[7px] font-[1000] text-white leading-none">N</span>
+                          <div className="w-3 h-3 bg-[#03C75A] rounded-[2px] flex items-center justify-center shadow-sm">
+                            <span className="text-[6px] font-[1000] text-white leading-none">N</span>
                           </div>
                         )}
                         {( !formData.provider || formData.provider === 'LOCAL') && (
-                          <img src={logo} alt="OneResume" className="w-4 h-4 object-contain opacity-80" />
+                          <img src={logo} alt="OneResume" className="w-3.5 h-3.5 object-contain opacity-80" />
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* 2. 빠른 도구 (중간 Utility 섹션 - 모바일/축소 상태) */}
-                  {(isMobile || isHeaderCollapsed) && (
-                    <div className="border-b border-zinc-500/10 mb-1 pb-1">
-                      <div className="px-4 py-2">
-                        <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>빠른 도구</p>
-                      </div>
+                  {/* 2. 빠른 도구 (중간 Utility 섹션 - PC를 제외한 모든 환경에서 다크모드 포함) */}
+                  <div className="border-b border-zinc-500/10 mb-0.5 pb-0.5">
+                    <div className="px-3 py-1.5 sm:px-4 sm:py-2">
+                      <p className={`text-[8px] lg:text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>빠른 도구</p>
+                    </div>
 
-                      {/* 모바일 전용 다크모드 토글 */}
-                      {isMobile && (
-                        <button onClick={(e) => { e.stopPropagation(); toggleDarkMode(); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'}`}>
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isDarkMode ? 'bg-amber-500/10 text-amber-500' : 'bg-zinc-800/10 text-zinc-700'}`}>
-                            {isDarkMode ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                            ) : (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                            )}
-                          </div>
-                          {isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'}
-                        </button>
-                      )}
-                      <button onClick={() => { setIsConnectModalOpen(true); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-blue-600'}`}>
-                        <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600 flex-shrink-0">
-                          <svg viewBox="0 0 24 24" className="h-4 w-4 flex-shrink-0 fill-current" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M13 10V3L4 14H11V21L20 10H13Z" />
-                          </svg>
+                    {/* PC(lg) 환경을 제외하고는 드롭다운에서 테마 변경 제공 */}
+                    <div className="lg:hidden">
+                      <button onClick={(e) => { e.stopPropagation(); toggleDarkMode(); setIsMenuOpen(false); }} className={`w-full flex items-center gap-2.5 px-2 py-2 sm:px-3 sm:py-2.5 text-[11px] sm:text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'}`}>
+                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isDarkMode ? 'bg-amber-500/10 text-amber-500' : 'bg-zinc-800/10 text-zinc-700'}`}>
+                          {isDarkMode ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                          )}
                         </div>
-                        확장 프로그램 연동
-                      </button>
-                      <button onClick={() => { setIsJDModalOpen(true); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-indigo-600'}`}>
-                        <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 flex-shrink-0">
-                          <svg viewBox="0 0 24 24" className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
-                          </svg>
-                        </div>
-                        AI 공고 매칭
-                      </button>
-                      <button onClick={() => { copyShareLink(); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-blue-600'}`}>
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 flex-shrink-0">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-                          </svg>
-                        </div>
-                        링크 복사
-                      </button>
-                      <button onClick={() => { downloadPDF(); setIsMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-emerald-600'}`}>
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 flex-shrink-0">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        </div>
-                        PDF 저장
+                        {isDarkMode ? '라이트 모드' : '다크 모드'}
                       </button>
                     </div>
-                  )}
+
+                    {(isMobile || isHeaderCollapsed) && (
+                      <>
+                        <button onClick={() => { setIsConnectModalOpen(true); setIsMenuOpen(false); }} className={`w-full flex items-center gap-2.5 px-2 py-2 sm:px-3 sm:py-2.5 text-[11px] sm:text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-blue-600'}`}>
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600 flex-shrink-0">
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 fill-current" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M13 10V3L4 14H11V21L20 10H13Z" />
+                            </svg>
+                          </div>
+                          확장 프로그램 연동
+                        </button>
+                        <button onClick={() => { setIsJDModalOpen(true); setIsMenuOpen(false); }} className={`w-full flex items-center gap-2.5 px-2 py-2 sm:px-3 sm:py-2.5 text-[11px] sm:text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-indigo-600'}`}>
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                              <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+                            </svg>
+                          </div>
+                          AI 공고 매칭
+                        </button>
+                        <button onClick={() => { copyShareLink(); setIsMenuOpen(false); }} className={`w-full flex items-center gap-2.5 px-2 py-2 sm:px-3 sm:py-2.5 text-[11px] sm:text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-blue-600'}`}>
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                            </svg>
+                          </div>
+                          링크 복사
+                        </button>
+                        <button onClick={() => { downloadPDF(); setIsMenuOpen(false); }} className={`w-full flex items-center gap-2.5 px-2 py-2 sm:px-3 sm:py-2.5 text-[11px] sm:text-xs font-black rounded-xl transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-emerald-600'}`}>
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                          </div>
+                          PDF 저장
+                        </button>
+                      </>
+                    )}
+                  </div>
 
                   {/* 3. 로그아웃 (최하단 Destructive 섹션) */}
-                  <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-xs font-black text-red-500 rounded-xl hover:bg-red-500/5 transition-all group/logout">
-                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover/logout:bg-red-500/20 transition-colors flex-shrink-0">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                  <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-3 py-2 sm:px-4 sm:py-3 text-[11px] sm:text-xs font-black text-red-500 rounded-xl hover:bg-red-500/5 transition-all group/logout">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover/logout:bg-red-500/20 transition-colors flex-shrink-0">
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                     </div>
                     로그아웃
                   </button>
-                </div>
+                </div>, document.body
               )}
             </div>
           </div>
@@ -525,15 +537,16 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
             className={`h-full overflow-y-auto custom-scrollbar relative ${transitionClass} ${
               !isMobile ? 'border-r' : ''
             } ${
-              isDarkMode ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-200'
+              isDarkMode ? 'bg-zinc-950 border-zinc-900 lg:bg-[#09090b]' : 'bg-zinc-50 border-zinc-200'
             }`}
           >
             <div 
-              className="w-full relative origin-top-left" 
+              className={`w-full relative origin-top-left min-h-full ${
+                isDarkMode ? 'bg-zinc-950 lg:bg-transparent' : 'bg-zinc-50'
+              }`}
               style={{ 
                 zoom: activeZoom,
-                padding: isMobile ? '0 0 100px 0' : '24px',
-                minHeight: '100%'
+                padding: isMobile ? '0 0 120px 0' : '24px'
               }}
             >
               <ResumeForm
@@ -548,62 +561,6 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
               />
             </div>
 
-            <button 
-              onClick={() => setIsLayoutOpen(!isLayoutOpen)}
-              className={`fixed z-[60] w-14 h-14 md:w-16 md:h-16 rounded-2xl shadow-2xl flex items-center justify-center transition-all duration-500 active:scale-90 border-2 ${
-                isResizing ? 'transition-none' : 'transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]'
-              } ${
-                isLayoutOpen 
-                  ? (isDarkMode ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-700 text-white')
-                  : (isDarkMode ? 'bg-zinc-800 border-zinc-700 text-blue-400 hover:border-blue-500' : 'bg-white border-blue-100 text-blue-600 hover:border-blue-500')
-              } ${isMobile ? 'bottom-32' : 'bottom-8'}`}
-              style={{ 
-                left: isMobile ? 'auto' : `calc(${leftWidth}% - 80px)`, 
-                right: isMobile ? '24px' : 'auto',
-                display: activeView === 'edit' || !isMobile ? 'flex' : 'none'
-              }}
-            >
-              {isLayoutOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-7 md:w-7 animate-in spin-in-90 duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-7 md:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 11a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zM4 17a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z" /></svg>
-              )}
-            </button>
-
-            {isLayoutOpen && (
-              <div 
-                className={`fixed z-[60] w-[calc(100%-48px)] md:w-80 p-6 rounded-[32px] shadow-2xl border-2 animate-in slide-in-from-bottom-8 fade-in zoom-in-95 duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-                  isResizing ? 'transition-none' : 'transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]'
-                } ${
-                  isDarkMode ? 'bg-zinc-900 border-zinc-700 shadow-blue-900/20' : 'bg-white border-blue-50'
-                } ${isMobile ? 'bottom-48' : 'bottom-28'}`}
-                style={{ 
-                  left: isMobile ? '24px' : `calc(${leftWidth}% - 340px)`,
-                  maxHeight: isMobile ? '60vh' : 'none'
-                }}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-1.5 h-5 bg-blue-600 rounded-full shadow-lg shadow-blue-500/50" />
-                  <h4 className={`font-black text-sm uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>섹션 순서 배치</h4>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className={`p-4 rounded-2xl border-2 border-dashed mb-4 ${isDarkMode ? 'bg-zinc-800/50 border-zinc-700' : 'bg-gray-50 border-gray-200'}`}>
-                    <p className={`text-[11px] font-bold leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                      드래그하여 섹션 순서를 바꾸면<br/>{isMobile ? '이력서 레이아웃' : '오른쪽 미리보기'}에 즉시 반영됩니다.
-                    </p>
-                  </div>
-
-                  <div className="custom-scrollbar max-h-[300px] md:max-h-[400px] overflow-y-auto pr-1">
-                    <ResumeForm
-                      formData={formData} handleDragEnd={handleDragEndWithState}
-                      onDragStart={handleDragStart} isDarkMode={isDarkMode}
-                      onlyLayout={true}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -684,6 +641,66 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
                 </div>
               </div>
             </div>
+          </>
+        )}
+
+        {/* 플로팅 섹션 순서 배치 버튼 & 모달 (전역 렌더링: 모바일은 미리보기에서, PC는 상시 노출) */}
+        {( !isMobile || activeView === 'preview') && (
+          <>
+            <button 
+              onClick={() => setIsLayoutOpen(!isLayoutOpen)}
+              className={`fixed z-[60] w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-2xl border-2 flex items-center justify-center transition-all duration-500 active:scale-90 ${
+                isResizing ? 'transition-none' : 'transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]'
+              } ${
+                isLayoutOpen 
+                  ? (isDarkMode ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20' : 'bg-zinc-900 border-zinc-700 text-white')
+                  : (isDarkMode ? 'bg-zinc-800 border-zinc-700 text-blue-400 hover:border-blue-500 hover:text-white' : 'bg-white border-zinc-200 text-blue-600 hover:border-blue-400')
+              } ${isMobile ? 'bottom-20 right-4' : 'bottom-8'}`}
+              style={{ 
+                left: isMobile ? 'auto' : `calc(${leftWidth}% - 80px)`
+              }}
+              title="섹션 순서 배치"
+            >
+              {isLayoutOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 animate-in spin-in-90 duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 11a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zM4 17a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z" /></svg>
+              )}
+            </button>
+
+            {isLayoutOpen && (
+              <div 
+                className={`fixed z-[60] w-52 sm:w-64 lg:w-72 p-3 sm:p-4 lg:p-4 rounded-[22px] border-2 animate-in slide-in-from-bottom-8 fade-in zoom-in-95 duration-200 z-[9999] origin-top-right ${
+                  isResizing ? 'transition-none' : 'transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]'
+                } ${
+                  isDarkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'
+                } ${isMobile ? 'bottom-36 right-4' : 'bottom-28'}`}
+                style={{ 
+                  left: isMobile ? 'auto' : `calc(${leftWidth}% - ${windowSize.width < 1280 ? '290px' : '320px'})`
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2.5 lg:mb-3.5">
+                  <div className="w-1 h-3 sm:w-1.5 sm:h-4 bg-blue-600 rounded-full shadow-lg shadow-blue-500/50" />
+                  <h4 className={`font-black text-[10px] sm:text-[11px] lg:text-sm uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>섹션 순서 배치</h4>
+                </div>
+                
+                <div className="space-y-1">
+                  <div className={`p-2 sm:p-2.5 rounded-xl border-2 border-dashed mb-1.5 lg:mb-2.5 ${isDarkMode ? 'bg-zinc-800/50 border-zinc-700' : 'bg-gray-50 border-gray-200'}`}>
+                    <p className={`text-[8.5px] sm:text-[9.5px] font-bold leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                      드래그하여 순서를 변경하세요.
+                    </p>
+                  </div>
+
+                  <div className="pr-0">
+                    <ResumeForm
+                      formData={formData} handleDragEnd={handleDragEndWithState}
+                      onDragStart={handleDragStart} isDarkMode={isDarkMode}
+                      onlyLayout={true}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>
