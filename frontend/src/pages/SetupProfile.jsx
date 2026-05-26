@@ -70,7 +70,17 @@ const SetupProfile = ({ isDarkMode, toggleDarkMode }) => {
     contact: (
       <div className="space-y-6 text-center py-10">
         <h3 className="text-2xl font-bold mb-2">고객 문의</h3>
-        <p className="text-zinc-500 mb-8">oneresume.dev@gmail.com</p>
+        <p className="text-zinc-500 mb-8">서비스 이용 중 불편한 점이나 제안사항이 있으신가요?</p>
+        <div className="space-y-4">
+          <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+            <p className="text-sm font-medium mb-1 opacity-50">공식 이메일</p>
+            <p className="text-lg font-bold text-blue-600">oneresume.dev@gmail.com</p>
+          </div>
+          <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-blue-600/5 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
+            <p className="text-sm font-medium mb-1 text-blue-600 opacity-80 font-bold">개발자 직통 문의 (빠른 답변)</p>
+            <p className="text-lg font-bold text-blue-600">parkjeongung0705@gmail.com</p>
+          </div>
+        </div>
       </div>
     )
   };
@@ -528,8 +538,14 @@ const SetupProfile = ({ isDarkMode, toggleDarkMode }) => {
         </div>
 
         <footer className={`mt-auto pt-16 pb-8 text-center px-6 transition-colors ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
-          <div className="flex items-center justify-center gap-6 text-[11px] font-bold tracking-tight mb-3"><button onClick={() => openModal('terms')} className="hover:text-blue-500 transition-colors">이용약관</button><button onClick={() => openModal('privacy')} className="hover:text-blue-500 transition-colors">개인정보처리방침</button><button onClick={() => openModal('disclaimer')} className="hover:text-blue-500 transition-colors">법적고지</button></div>
-          <p className="text-[10px] opacity-40 font-medium tracking-[0.2em]">© 2026 ONERESUME. ALL RIGHTS RESERVED.</p>
+          <div className="flex items-center justify-center gap-6 text-[11px] font-bold tracking-tight mb-4">
+            <button onClick={() => openModal('terms')} className="hover:text-blue-500 transition-colors">이용약관</button>
+            <button onClick={() => openModal('privacy')} className="hover:text-blue-500 transition-colors">개인정보처리방침</button>
+            <button onClick={() => openModal('disclaimer')} className="hover:text-blue-500 transition-colors">법적고지</button>
+            <button onClick={() => openModal('contact')} className="hover:text-blue-500 transition-colors font-bold">고객문의</button>
+          </div>
+          <p className="text-[10px] opacity-70 font-bold tracking-[0.1em] mb-1">© 2026 ONERESUME. Created by 박정웅. ALL RIGHTS RESERVED.</p>
+          <p className="text-[9px] opacity-40 font-medium tracking-tight">Logo Design by 김다인</p>
         </footer>
 
         <LegalModal isOpen={legalModal.isOpen} onClose={() => setLegalModal({ ...legalModal, isOpen: false })} title={legalModal.title} content={legalModal.content} isDarkMode={isDarkMode} />

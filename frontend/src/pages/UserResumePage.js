@@ -309,8 +309,9 @@ function UserResumePage({ subdomain }) {
           )}
         </main>
 
-        <footer className="py-12 text-center opacity-30 font-bold tracking-tighter text-sm">
-          <p>&copy; 2026 OneResume. All rights reserved.</p>
+        <footer className="py-12 text-center opacity-30 font-bold tracking-tight text-sm">
+          <p className="mb-1">&copy; 2026 OneResume. Created by 박정웅. All rights reserved.</p>
+          <p className="text-[10px] opacity-60">Logo Design by 김다인</p>
         </footer>
       </div>
 

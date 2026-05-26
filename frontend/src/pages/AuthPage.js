@@ -84,9 +84,15 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
         </div>
         <h3 className="text-2xl font-bold mb-2">고객 문의</h3>
         <p className="text-zinc-500 mb-8">서비스 이용 중 불편한 점이나 제안사항이 있으신가요?</p>
-        <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
-          <p className="text-sm font-medium mb-1 opacity-50">공식 이메일</p>
-          <p className="text-lg font-bold text-blue-600">oneresume.dev@gmail.com</p>
+        <div className="space-y-4">
+          <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+            <p className="text-sm font-medium mb-1 opacity-50">공식 이메일</p>
+            <p className="text-lg font-bold text-blue-600">oneresume.dev@gmail.com</p>
+          </div>
+          <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-blue-600/5 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
+            <p className="text-sm font-medium mb-1 text-blue-600 opacity-80 font-bold">개발자 직통 문의 (빠른 답변)</p>
+            <p className="text-lg font-bold text-blue-600">parkjeongung0705@gmail.com</p>
+          </div>
         </div>
         <p className="mt-8 text-xs text-zinc-400">문의하신 내용은 확인 후 1~3 영업일 이내에 답변해 드립니다.</p>
       </div>
@@ -350,8 +356,11 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
               고객문의
             </button>
           </div>
-          <p className="mt-3 text-[10px] opacity-50 font-medium tracking-wider">
-            © 2026 OneResume. All rights reserved.
+          <p className="mt-3 text-[10px] opacity-70 font-bold tracking-wider">
+            © 2026 OneResume. Created by 박정웅. All rights reserved.
+          </p>
+          <p className="mt-1 text-[9px] opacity-40 font-medium tracking-tight">
+            Logo Design by 김다인
           </p>
         </footer>
 
