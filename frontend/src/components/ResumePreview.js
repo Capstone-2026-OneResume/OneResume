@@ -437,7 +437,7 @@ const ResumePreview = React.memo(React.forwardRef((props, ref) => {
   if (printMode) {
     return (
       <div ref={ref} className="bg-white">
-        {pages.map((page) => (
+        {pages.map((page, index) => (
           <div 
             key={page.id} 
             data-print-page="true" 
@@ -446,7 +446,7 @@ const ResumePreview = React.memo(React.forwardRef((props, ref) => {
               fontFamily: "'Noto Sans KR', sans-serif",
               boxSizing: 'border-box',
               display: 'block',
-              pageBreakAfter: 'always',
+              pageBreakAfter: index === pages.length - 1 ? 'auto' : 'always',
               pageBreakInside: 'avoid'
             }}
           >

@@ -61,6 +61,26 @@ function App() {
     }
   }, [isDarkMode]);
 
+  // 인쇄 시 다크모드 강제 해제 로직 (PDF는 무조건 라이트모드)
+  useEffect(() => {
+    const handleBeforePrint = () => {
+      document.documentElement.classList.remove('dark');
+    };
+    const handleAfterPrint = () => {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+      }
+    };
+
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, [isDarkMode]);
+
   // 테마 토글 함수 (자식 컴포넌트들에게 전달할 용도)
   const toggleDarkMode = () => {
     const newTheme = !isDarkMode;

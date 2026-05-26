@@ -52,7 +52,7 @@ function JDMatchModal({ isOpen, onClose, isDarkMode }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-6">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-6 print:hidden">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
       <div className={`relative w-[95vw] md:w-full ${result ? 'md:max-w-4xl' : 'md:max-w-2xl'} h-auto max-h-[90vh] md:max-h-[85vh] overflow-hidden rounded-[28px] md:rounded-[32px] shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300 ${
