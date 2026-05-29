@@ -104,11 +104,11 @@ function App() {
             border: isDarkMode ? '1px solid #334155' : '1px solid #f1f5f9', // slate-700 : slate-100
            },
           success: {
-            duration: 3000,
+            duration: 2000,
             theme: { primary: '#10b981' },
           },
           error: {
-            duration: 4000,
+            duration: 2500,
             theme: { primary: '#ef4444' },
           },
         }}
