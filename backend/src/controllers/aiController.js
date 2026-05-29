@@ -64,7 +64,7 @@ exports.auditResumeContent = async (req, res) => {
       });
     }
 
-    // [최종 해결] 가장 안정적인 별칭(Alias) 사용
+    // [v1.7.2] 모델명 원복 (gemini-flash-latest)
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
     const prompt = `

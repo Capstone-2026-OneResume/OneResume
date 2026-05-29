@@ -25,25 +25,24 @@ const allowedOrigins = [
 const app = express();
 const port = 5000;
 
-app.set('trust proxy', 1);
+// 운영 환경(Cloudflare + Nginx) IP 인식을 위해 다시 1로 설정
+app.set('trust proxy', 1); 
 
-// 1. CORS 설정 (가장 먼저 적용)
+// 1. 기본 미들웨어 (JSON 파싱을 모든 보안 설정보다 상단으로)
+app.use(express.json());
+
+// 2. CORS 설정
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    
-    // 허용 목록에 있거나 oneresume.kr의 서브도메인이거나 
-    // 크롬 확장 프로그램(chrome-extension://) 또는 S3/AWS 관련 도메인들 허용
     const isAllowed = allowedOrigins.some(allowed => origin === allowed) || 
                      origin.endsWith('.oneresume.kr') ||
                      origin.startsWith('chrome-extension://') ||
                      origin.includes('s3-website') || 
                      origin.endsWith('amazonaws.com');
-    
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.log('CORS 차단됨:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -52,70 +51,40 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// 2. [Security] Helmet 적용 (보안 헤더 설정)
+// 3. [Security] Helmet 적용
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }, // 외부 이미지/리소스 허용
+  crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginOpenerPolicy: false,
   originAgentCluster: false,
-  contentSecurityPolicy: false, // 확장 프로그램 UI 주입을 위해 CSP는 유연하게 설정
+  contentSecurityPolicy: false, 
 }));
 
-const getSafeAllowedOrigin = (req) => {
-    const origin = req.headers.origin;
-    if (origin && (allowedOrigins.includes(origin) || origin.endsWith('amazonaws.com') || origin.endsWith('.oneresume.kr'))) {
-        return origin;
-    }
-    return allowedOrigins[0];
-};
-
-// 3. [Security] Rate Limiting 설정 (계층형 방어)
-
-// [일반] 전체 API 요청 제한 (분당 10회)
+// 4. [Security] Rate Limiting 설정
 const generalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 10,
+  max: 30, // 테스트를 위해 30회로 조정 (안정화 후 상향 가능)
   handler: (req, res) => {
-    const origin = getSafeAllowedOrigin(req);
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.status(429).json({
-      message: "잠시 요청을 제한합니다. 1분 후 다시 시도해주세요."
-    });
+    res.status(429).json({ message: "잠시 요청을 제한합니다. 1분 후 다시 시도해주세요." });
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// [강력] AI 분석 전용 요청 제한 (분당 5회 - 쿼터 보호용)
 const aiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 5,
+  max: 5, // AI는 엄격하게 분당 5회
   handler: (req, res) => {
-    const origin = getSafeAllowedOrigin(req);
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.status(429).json({
-      message: "요청이 너무 많습니다. 1분만 휴식 후 다시 시도해주세요."
-    });
+    res.status(429).json({ message: "AI 분석 요청이 너무 많습니다. 1분만 휴식 후 다시 시도해주세요." });
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// 기본적으로 모든 요청에 일반 리미터 적용
-app.use(generalLimiter);
-
-// AI 관련 엔드포인트에는 더 강력한 리미터 추가 적용
-app.use('/api/ai', aiLimiter);
-
-// 미들웨어 설정
-app.use(express.json());
-
-// 분리한 라우터들을 메인 서버에 연결해주는 길 안내 표지판
-app.use('/api/auth', authRoutes);
-app.use('/api/resume', resumeRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/external', externalRoutes);
+// 각 라우터에 리미터 명시적 적용 (경로 꼬임 방지)
+app.use('/api/auth', generalLimiter, authRoutes);
+app.use('/api/resume', generalLimiter, resumeRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
+app.use('/api/external', generalLimiter, externalRoutes);
 
 // 서버 실행 및 데이터베이스 연결 확인
 app.listen(port, '0.0.0.0',  async () => {
