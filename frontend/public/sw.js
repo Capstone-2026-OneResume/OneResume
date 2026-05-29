@@ -1,5 +1,5 @@
 // OneResume Service Worker: Network-First Strategy
-const CACHE_NAME = 'oneresume-cache-v2'; // 버전을 올려서 기존 캐시 강제 갱신
+const CACHE_NAME = 'oneresume-cache-v3'; // 버전을 올려서 기존 캐시 강제 갱신 (보안 및 중복 클릭 방지 패치 반영)
 const urlsToCache = [
   '/',
   '/index.html',

@@ -635,7 +635,27 @@ const ResumeForm = ({
                       </span>
                     </div>
                     <div className="pl-1 flex flex-col gap-1 pt-0.5">
-<div className="flex items-center gap-2"><span className={`text-[10px] md:text-[12px] font-bold ${theme.subText}`}>접속 주소 미리보기:</span><span className="text-[10px] md:text-[13px] font-black text-blue-500 underline underline-offset-4 tracking-tight">https://{formData.subdomain || "your-id"}.oneresume.kr</span></div></div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] md:text-[12px] font-bold ${theme.subText}`}>접속 주소 미리보기:</span>
+                        {formData.subdomain ? (
+                          <a 
+                            href={`https://${formData.subdomain}.oneresume.kr`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[10px] md:text-[13px] font-black text-blue-500 hover:text-blue-400 transition-colors underline underline-offset-4 tracking-tight flex items-center gap-0.5"
+                          >
+                            https://{formData.subdomain}.oneresume.kr
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 md:h-3 md:w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        ) : (
+                          <span className="text-[10px] md:text-[13px] font-black text-blue-500/50 underline underline-offset-4 tracking-tight cursor-not-allowed">
+                            https://your-id.oneresume.kr
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className={`p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-[32px] border ${theme.cardBg} space-y-4 md:space-y-8`}><div className="flex items-center gap-2 mb-1"><div className="w-1.5 h-3.5 md:h-4 bg-blue-600 rounded-full" /><h4 className={`text-[11px] md:text-[13px] font-black uppercase tracking-widest ${theme.labelText}`}>외부 링크 연동</h4></div><div className="flex flex-col gap-2"><label className={`pl-1 text-[10px] md:text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>GitHub 주소</label><div className="flex gap-2 md:gap-3"><input type="text" name="githubUrl" value={formData.githubUrl || ""} onChange={handleChange} placeholder="https://github.com/your-id" className={`flex-1 px-3.5 py-2.5 md:px-4 md:py-3 rounded-lg md:rounded-xl border outline-none transition-all text-[14px] md:text-base ${theme.innerInputBg}`} />{formData.githubUrl && <button type="button" onClick={handleGithubSync} className="bg-zinc-900 dark:bg-blue-600 text-white font-black px-4 md:px-6 rounded-lg md:rounded-xl text-[10px] md:text-xs active:scale-95 transition-all">동기화</button>}</div></div><div className="flex flex-col gap-2"><label className={`pl-1 text-[10px] md:text-[12px] font-black uppercase tracking-wider ${theme.labelText}`}>기술 블로그</label><input type="text" name="blogUrl" value={formData.blogUrl || ""} onChange={handleChange} placeholder="https://velog.io/@your-id" className={`w-full px-3.5 py-2.5 md:px-4 md:py-3 rounded-lg md:rounded-xl border outline-none transition-all text-[14px] md:text-base ${theme.innerInputBg}`} /></div></div>

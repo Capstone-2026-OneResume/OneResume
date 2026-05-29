@@ -70,24 +70,8 @@ const getSafeAllowedOrigin = (req) => {
 
 // 3. [Security] Rate Limiting 설정 (계층형 방어)
 
-// [일반] 전체 API 요청 제한 (분당 60회)
+// [일반] 전체 API 요청 제한 (분당 10회)
 const generalLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 60,
-  handler: (req, res) => {
-    const origin = getSafeAllowedOrigin(req);
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.status(429).json({
-      message: "시스템 보안을 위해 잠시 요청을 제한합니다. 1분 후 다시 시도해주세요."
-    });
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// [강력] AI 분석 전용 요청 제한 (분당 10회 - 쿼터 보호용)
-const aiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 10,
   handler: (req, res) => {
@@ -95,7 +79,23 @@ const aiLimiter = rateLimit({
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.status(429).json({
-      message: "AI 분석 사용량이 너무 많습니다. 1분만 휴식 후 다시 시도해주세요."
+      message: "잠시 요청을 제한합니다. 1분 후 다시 시도해주세요."
+    });
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// [강력] AI 분석 전용 요청 제한 (분당 5회 - 쿼터 보호용)
+const aiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 5,
+  handler: (req, res) => {
+    const origin = getSafeAllowedOrigin(req);
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.status(429).json({
+      message: "요청이 너무 많습니다. 1분만 휴식 후 다시 시도해주세요."
     });
   },
   standardHeaders: true,

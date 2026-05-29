@@ -100,7 +100,7 @@ exports.auditResumeContent = async (req, res) => {
         parts: [{ text: prompt }]
       }]
     }, {
-      timeout: 20000 // 20초 타임아웃으로 조정
+      timeout: 30000 // 모바일 네트워크 지연을 고려하여 30초로 다시 상향
     });
 
     // 응답 데이터에서 텍스트 추출
@@ -211,7 +211,7 @@ exports.matchJD = async (req, res) => {
         parts: [{ text: prompt }]
       }]
     }, {
-      timeout: 20000 // 20초 타임아웃으로 조정
+      timeout: 30000 // 모바일 네트워크 지연을 고려하여 30초로 다시 상향
     });
 
     const responseText = response.data.candidates[0].content.parts[0].text;
@@ -313,7 +313,7 @@ exports.generateCoverLetter = async (req, res) => {
         parts: [{ text: prompt }]
       }]
     }, {
-      timeout: 20000 // 20초 타임아웃으로 조정
+      timeout: 30000 // 모바일 네트워크 지연을 고려하여 30초로 다시 상향
     });
 
     const responseText = response.data.candidates[0].content.parts[0].text;
