@@ -323,12 +323,20 @@ const createOverlay = (siteName, themeColor, mode = 'ready') => {
     overlay.id = 'or-magic-overlay';
     let siteLogo = siteName === '사람인' ? chrome.runtime.getURL('icons/saramin.webp') : 'https://www.jobkorea.co.kr/favicon.ico';
 
-    const textContent = mode === 'success' ? `<strong>${siteName}</strong> 자동입력이 완료되었습니다` : `<strong>${siteName}</strong> 자동입력 준비완료`;
-    const iconContent = mode === 'success'
-      ? `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
-      : `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-    const arrowClass = mode === 'success' ? '' : 'or-bounce-x';
-    const boxStyle = mode === 'success' ? 'border: 2px solid rgba(16,185,129,0.4); box-shadow: 0 20px 50px rgba(16,185,129,0.15);' : '';
+    let textContent = `<strong>${siteName}</strong> 자동입력 준비완료`;
+    let iconContent = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+    
+    if (mode === 'success') {
+      textContent = `<strong>${siteName}</strong> 자동입력이 완료되었습니다`;
+      iconContent = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (mode === 'ai_ready') {
+      textContent = `<strong>${siteName}</strong> AI 공고 분석 준비완료`;
+      // [v1.1.9] 스캐너 아이콘 시인성 개선을 위해 크기 상향 (22 -> 26)
+      iconContent = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/></svg>`;
+    }
+
+    const arrowClass = (mode === 'ready' || mode === 'ai_ready') ? 'or-bounce-x' : '';
+    const boxStyle = mode === 'success' ? 'border: 2px solid rgba(16,185,129,0.4); box-shadow: 0 20px 50px rgba(16,185,129,0.15);' : (mode === 'ai_ready' ? 'border: 2px solid rgba(129,140,248,0.4); box-shadow: 0 20px 50px rgba(129,140,248,0.15);' : '');
 
     overlay.innerHTML = `
       <div class="or-box" style="${boxStyle}">
@@ -493,43 +501,66 @@ const initSmartEngine = () => {
   if (!isExtensionActive) return;
   try {
     const host = window.location.hostname;
-    const path = window.location.pathname;
+    const path = window.location.pathname.toLowerCase(); // [v1.1.9 Fix] 대소문자 구분 방지
+    
     let siteName = null;
     let themeColor = null;
-    let isResumePage = false;
+    let isResumeEditPage = false;
+    let isJobPostingPage = false;
 
+    // 1. 사이트 판별 및 페이지 유형 체크
     if (host.includes('saramin.co.kr')) { 
       siteName = '사람인'; 
       themeColor = '#4876ef';
-      // 사람인 이력서 작성/수정 페이지 경로 체크
-      if (path.includes('/zf_user/resume/resume-edit') || path.includes('/zf_user/resume/resume-manage')) {
-        isResumePage = true;
+      
+      // 사람인 이력서 작성/수정 페이지
+      if (path.includes('/resume-manage/write') || path.includes('/resume/resume-edit') || path.includes('/resume-manage/modify')) {
+        isResumeEditPage = true;
+      }
+      // 사람인 채용 공고 페이지 (relay/view 등 다양한 상세 페이지 대응)
+      if (path.includes('/recruit/recruit_view') || path.includes('/jobs/view') || path.includes('/jobs/relay/view')) {
+        isJobPostingPage = true;
       }
     }
     else if (host.includes('jobkorea.co.kr')) { 
       siteName = '잡코리아'; 
       themeColor = '#ff4b13';
-      // 잡코리아 이력서 작성/수정 페이지 경로 체크
-      if (path.includes('/User/Resume/Write') || path.includes('/User/Resume/Modify') || path.includes('/User/Resume/ResumeManage')) {
-        isResumePage = true;
+      
+      // 잡코리아 이력서 작성/수정 페이지
+      if (path.includes('/user/resume/write') || path.includes('/user/resume/modify')) {
+        isResumeEditPage = true;
+      }
+      // 잡코리아 채용 공고 페이지 (gi_read, jobread 등 대응)
+      if (path.includes('/recruit/jobread') || path.includes('/job/view') || path.includes('/recruit/gi_read')) {
+        isJobPostingPage = true;
       }
     }
     
-    // 이력서 페이지인 경우에만 알림 및 FAB(엔진) 초기화
-    if (siteName && isResumePage && window.self === window.top) {
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => { 
-          createOverlay(siteName, themeColor); 
-          createFAB(); 
-          createAIWidget();
-        });
-      } else {
-        setTimeout(() => { 
-          createOverlay(siteName, themeColor); 
-          createFAB(); 
-          createAIWidget();
-        }, 500);
+    if (window.self !== window.top) return;
+
+    // 2. 엔진 및 UI 초기화 전략
+    const setupUI = () => {
+      // AI 위젯은 사람인/잡코리아 어디서든 노출 (공고 분석 및 자소서 지원)
+      if (siteName) {
+        createAIWidget();
       }
+      
+      // 자동입력 엔진(FAB, Overlay)은 이력서 편집 페이지에서만 노출
+      if (isResumeEditPage) {
+        createOverlay(siteName, themeColor); 
+        createFAB(); 
+      }
+      
+      // [v1.1.9 New] 채용 공고 페이지에서는 AI 분석 안내 알림 노출
+      if (isJobPostingPage) {
+        createOverlay(siteName, themeColor, 'ai_ready');
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupUI);
+    } else {
+      setTimeout(setupUI, 500);
     }
   } catch (e) {}
 };
@@ -593,7 +624,7 @@ const createAIWidget = () => {
     container.innerHTML = `
       <div id="or-ai-toggle" class="or-ai-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" /></svg>
-        <span>AI 분석</span>
+        <span>OneResume AI 분석</span>
       </div>
       <div id="or-ai-menu" class="or-ai-panel or-ai-hidden">
         <button id="or-btn-match" class="or-ai-action-btn">
@@ -683,7 +714,7 @@ const createAIWidget = () => {
         menu.classList.add('or-ai-hidden');
         resultBox.classList.remove('or-ai-hidden');
         
-        contentBox.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; padding: 40px 0;"><div class="or-loading-spinner"></div><div style="margin-top:15px; color:#94a3b8; font-weight:600;">AI가 분석 중입니다...</div></div>';
+        contentBox.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; padding: 40px 0;"><div class="or-loading-spinner"></div><div style="margin-top:15px; color:#94a3b8; font-weight:600;">OneResume AI가 분석 중입니다...</div></div>';
 
         chrome.runtime.sendMessage({
           action: "CALL_AI_API",
