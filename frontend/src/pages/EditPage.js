@@ -241,7 +241,10 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
       {/* 1. 웹 전용 레이아웃 (인쇄 시 숨김) */}
       <div className="print:hidden">
         <PageLayout isDarkMode={isDarkMode} noPadding={true}>
-          <header className={`sticky top-0 h-14 px-3 md:px-6 border-b flex items-center justify-between z-50 backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-zinc-900/90 border-zinc-800 shadow-lg shadow-black/20' : 'bg-white/90 border-zinc-200 shadow-sm'}`}>
+          <header 
+            style={{ paddingTop: 'var(--safe-area-top)' }}
+            className={`sticky top-0 h-auto min-h-[56px] px-3 md:px-6 border-b flex items-center justify-between z-50 backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-zinc-900/90 border-zinc-800 shadow-lg shadow-black/20' : 'bg-white/90 border-zinc-200 shadow-sm'}`}
+          >
             <div className="flex items-center gap-2 md:gap-4 flex-shrink-0 mr-2">
               <div className="flex items-center gap-1.5 md:gap-2.5 flex-shrink-0">
                 <img src={logo} alt="OneResume Logo" onClick={() => window.location.reload()} className="w-6 h-6 md:w-8 md:h-8 object-contain flex-shrink-0 cursor-pointer transition-transform hover:scale-110 active:scale-95" />

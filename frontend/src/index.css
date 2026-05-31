@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --safe-area-top: env(safe-area-inset-top);
+}
+
 /* --- Global App Styles --- */
 html, body {
   background-color: #f9f9fb; /* zinc-50 */
