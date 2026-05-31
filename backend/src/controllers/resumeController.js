@@ -95,38 +95,40 @@ exports.searchWorknetDept = async (req, res) => {
     }
 
     try {
-        // 1. 고용24 시도
+        // 1. 고용24 시도 (개별 try-catch로 감싸서 실패 시 무조건 폴백으로 유도)
         if (WORKNET_DEPT_KEY) {
-            const url = `https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo213L01.do?authKey=${WORKNET_DEPT_KEY}&returnType=XML&target=MAJORCD&srchType=K&keyword=${encodeURIComponent(keyword)}`;
-            const response = await axios.get(url);
-            const jsonObj = parser.parse(response.data);
-
-            if (!jsonObj.GO24?.error && jsonObj.majorsList?.majorList) {
-                console.log("✅ Using Goyong24 Data (213L01)");
-                const items = Array.isArray(jsonObj.majorsList.majorList) ? jsonObj.majorsList.majorList : [jsonObj.majorsList.majorList];
+            try {
+                const url = `https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo213L01.do?authKey=${WORKNET_DEPT_KEY}&returnType=XML&target=MAJORCD&srchType=K&keyword=${encodeURIComponent(keyword)}`;
                 
-                // 상세 로깅 (첫 번째 데이터 구조 확인)
-                if (items.length > 0) {
-                    console.log("📦 Sample Goyong24 Item:", JSON.stringify(items[0]));
-                }
+                // 타임아웃 3초 설정 (배포 서버 네트워크 지연 대비)
+                const response = await axios.get(url, { timeout: 3000 });
+                const jsonObj = parser.parse(response.data);
 
-                const normalized = items.map(item => {
-                    // XML 파서에 따라 필드가 객체 { "": "값" } 등으로 올 수 있어 방어 로직 추가
-                    const getName = (val) => typeof val === 'object' ? (val['#text'] || val[''] || JSON.stringify(val)) : val;
-                    return {
-                        majorName: getName(item.knowSchDptNm || item.majorNm || ""),
-                        detailName: getName(item.knowDtlSchDptNm || item.univNm || "")
-                    };
-                });
-                console.log(`✅ Sending ${normalized.length} normalized Goyong24 items to frontend`);
-                return res.status(200).json({ univSrch: normalized });
+                if (!jsonObj.GO24?.error && jsonObj.majorsList?.majorList) {
+                    console.log("✅ Using Goyong24 Data (213L01)");
+                    const items = Array.isArray(jsonObj.majorsList.majorList) ? jsonObj.majorsList.majorList : [jsonObj.majorsList.majorList];
+                    
+                    const normalized = items.map(item => {
+                        const getName = (val) => typeof val === 'object' ? (val['#text'] || val[''] || JSON.stringify(val)) : val;
+                        return {
+                            majorName: getName(item.knowSchDptNm || item.majorNm || ""),
+                            detailName: getName(item.knowDtlSchDptNm || item.univNm || "")
+                        };
+                    });
+                    console.log(`✅ Sending ${normalized.length} normalized Goyong24 items`);
+                    return res.status(200).json({ univSrch: normalized });
+                }
+            } catch (e) {
+                console.warn("⚠️ Goyong24 direct attempt failed or timed out. Switching to fallback...");
             }
         }
 
-        // 2. 고용24 실패 시 커리어넷 폴백
-        console.log("🔄 Goyong24 failed or not configured, falling back to CareerNet...");
+        // 2. 고용24 실패 또는 미설정 시 커리어넷 폴백
+        console.log("🔄 Running fallback to CareerNet...");
         const fallbackUrl = `https://www.career.go.kr/cnet/openapi/getOpenApi?apiKey=${CAREERNET_API_KEY}&svcType=api&svcCode=MAJOR&contentType=json&gubun=univ_list&searchTitle=${encodeURIComponent(keyword)}`;
-        const fallbackRes = await axios.get(fallbackUrl);
+        
+        // 폴백도 타임아웃 5초 설정
+        const fallbackRes = await axios.get(fallbackUrl, { timeout: 5000 });
         const careerData = fallbackRes.data?.dataSearch?.content || [];
         
         const normalized = careerData.map(item => ({
@@ -134,7 +136,7 @@ exports.searchWorknetDept = async (req, res) => {
             detailName: item.facilName || ""
         }));
 
-        console.log(`✅ Sending ${normalized.length} normalized CareerNet items to frontend`);
+        console.log(`✅ Sending ${normalized.length} normalized CareerNet items`);
         res.status(200).json({ univSrch: normalized });
 
     } catch (error) {
