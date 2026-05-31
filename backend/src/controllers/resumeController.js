@@ -85,7 +85,7 @@ exports.searchWorknet = async (req, res) => {
     }
 };
 
-// [0-2] 워크넷 학과 정보 검색 프록시 API (고용24 우선 하이브리드)
+// [0-2] 학과 정보 검색 프록시 API (고용24 우선 하이브리드)
 exports.searchWorknetDept = async (req, res) => {
     const { keyword } = req.query;
     console.log(`🔍 [Major Search] Keyword: ${keyword}`);
@@ -95,45 +95,61 @@ exports.searchWorknetDept = async (req, res) => {
     }
 
     try {
-        // 1. [원복] 고용24 시도 (우리 프로젝트의 메인 데이터 소스)
+        // 1. 고용24 시도 (우리의 메인 데이터 소스 - 차단 우회 시도)
         if (WORKNET_DEPT_KEY) {
             try {
                 console.log("🚀 Calling Goyong24 (Primary)...");
-                const url = `https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo213L01.do?authKey=${WORKNET_DEPT_KEY}&returnType=XML&target=MAJORCD&srchType=K&keyword=${encodeURIComponent(keyword)}`;
+                const url = `https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo213L01.do?authKey=${WORKNET_DEPT_KEY.trim()}&returnType=XML&target=MAJORCD&srchType=K&keyword=${encodeURIComponent(keyword)}`;
                 
-                // 타임아웃 3초 설정
-                const response = await axios.get(url, { timeout: 3000 });
+                // [필살기] 실제 브라우저처럼 보이게 헤더 추가 + 타임아웃 5초
+                const response = await axios.get(url, { 
+                    timeout: 5000,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'application/xml, text/xml, */*'
+                    }
+                });
+                
                 const jsonObj = parser.parse(response.data);
 
                 if (!jsonObj.GO24?.error && jsonObj.majorsList?.majorList) {
-                    console.log("✅ Goyong24 Success");
+                    console.log("✅ Goyong24 Success!");
                     const items = Array.isArray(jsonObj.majorsList.majorList) ? jsonObj.majorsList.majorList : [jsonObj.majorsList.majorList];
                     
                     const normalized = items.map(item => {
-                        const getName = (val) => typeof val === 'object' ? (val['#text'] || val[''] || "") : val;
+                        const getName = (val) => {
+                            if (!val) return "";
+                            return typeof val === 'object' ? (val['#text'] || val[''] || String(val)) : String(val);
+                        };
                         return {
-                            majorName: getName(item.knowSchDptNm || item.majorNm || ""),
-                            detailName: getName(item.knowDtlSchDptNm || item.univNm || "")
+                            majorName: getName(item.knowSchDptNm || item.majorNm || "이름 정보 없음"),
+                            detailName: getName(item.knowDtlSchDptNm || item.univNm || "전공 정보")
                         };
                     });
                     return res.status(200).json({ univSrch: normalized });
                 }
             } catch (e) {
-                console.warn("⚠️ Goyong24 failed, falling back to CareerNet...");
+                console.warn(`⚠️ Goyong24 attempt failed (${e.message}). Switching to backup...`);
             }
         }
 
-        // 2. 고용24 실패 시 커리어넷 백업
+        // 2. 고용24 실패 시 커리어넷 백업 (사용자가 못 느끼게 데이터 규격 동일화)
         console.log("🔄 Running fallback to CareerNet...");
         const fallbackUrl = `https://www.career.go.kr/cnet/openapi/getOpenApi?apiKey=${CAREERNET_API_KEY}&svcType=api&svcCode=MAJOR&contentType=json&gubun=univ_list&searchTitle=${encodeURIComponent(keyword)}`;
+        
         const fallbackRes = await axios.get(fallbackUrl, { timeout: 5000 });
         const careerData = fallbackRes.data?.dataSearch?.content || [];
         
-        const normalized = careerData.map(item => ({
-            majorName: item.majorName || item.facilName || "학과명 정보 없음",
-            detailName: item.lClass || item.mClass || ""
-        }));
+        const normalized = careerData.map(item => {
+            const name = item.majorName || item.facilName || "학과명 정보 없음";
+            const detail = (name === item.facilName) ? (item.lClass || "대학교") : (item.facilName || "대학교");
+            return {
+                majorName: name,
+                detailName: detail
+            };
+        });
 
+        console.log(`✅ CareerNet Fallback Success: ${normalized.length} items`);
         res.status(200).json({ univSrch: normalized });
 
     } catch (error) {
