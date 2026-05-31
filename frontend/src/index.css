@@ -4,12 +4,15 @@
 
 :root {
   --safe-area-top: env(safe-area-inset-top);
+  --header-height: 56px;
+  --total-header-height: calc(var(--header-height) + var(--safe-area-top));
 }
 
 /* --- Global App Styles --- */
 html, body {
   background-color: #f9f9fb; /* zinc-50 */
   -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none; /* 모바일 바운스 효과 억제하여 하단바 로직 안정화 */
   transition: 
     background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1), 
     color 1.2s cubic-bezier(0.4, 0, 0.2, 1),

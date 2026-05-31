@@ -172,24 +172,16 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
       const currentScroll = e.target.scrollTop;
       const delta = currentScroll - lastScrollTop.current;
       
-      // 최상단 근처에서는 항상 보여줌
-      if (currentScroll < 50) {
+      // 최상단 근처이거나 위로 스크롤 중이면 무조건 보여줌
+      if (currentScroll < 50 || delta < -5) {
         setShowBottomBar(true);
         scrollAccumulator.current = 0;
-        lastScrollTop.current = currentScroll;
-        return;
-      }
-
-      if (delta > 0) {
+      } else if (delta > 5) {
         // 스크롤 내리는 중 (숨기기)
         scrollAccumulator.current += delta;
-        if (scrollAccumulator.current > 150) { // 감도를 250에서 150으로 조정
+        if (scrollAccumulator.current > 100) {
           setShowBottomBar(false);
         }
-      } else if (delta < -10) { // 미세한 떨림 방지
-        // 스크롤 올리는 중 (보여주기)
-        setShowBottomBar(true);
-        scrollAccumulator.current = 0;
       }
       
       lastScrollTop.current = currentScroll;
@@ -197,7 +189,9 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
 
     // 편집/미리보기 컨테이너 모두 감시
     const containers = document.querySelectorAll('.custom-scrollbar');
-    containers.forEach(container => container.addEventListener('scroll', handleScroll));
+    containers.forEach(container => {
+      container.addEventListener('scroll', handleScroll, { passive: true });
+    });
     
     return () => {
       containers.forEach(container => container.removeEventListener('scroll', handleScroll));
@@ -313,7 +307,8 @@ function EditPage({ isDarkMode, toggleDarkMode }) {
                   {isMenuOpen && createPortal(
                     <div
                       onMouseDown={(e) => e.stopPropagation()}
-                      className={`fixed top-14 right-3 sm:right-6 lg:right-10 mt-1.5 w-56 sm:w-64 lg:w-72 max-w-[calc(100vw-24px)] p-1 rounded-2xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-[9999] origin-top-right print:hidden ${
+                      style={{ top: 'calc(var(--total-header-height) + 4px)' }}
+                      className={`fixed right-3 sm:right-6 lg:right-10 w-56 sm:w-64 lg:w-72 max-w-[calc(100vw-24px)] p-1 rounded-2xl border shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-[9999] origin-top-right print:hidden ${
                       isDarkMode ? 'bg-zinc-900 border-zinc-700 shadow-black/50' : 'bg-white border-zinc-100 shadow-zinc-200/50'
                     }`}>
 
