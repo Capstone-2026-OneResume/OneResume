@@ -85,7 +85,7 @@ exports.searchWorknet = async (req, res) => {
     }
 };
 
-// [0-2] 학과 정보 검색 프록시 API (고용24 우선 하이브리드)
+// [0-2] 학과 정보 검색 프록시 API (커리어넷 기반 단일화)
 exports.searchWorknetDept = async (req, res) => {
     const { keyword } = req.query;
     console.log(`🔍 [Major Search] Keyword: ${keyword}`);
@@ -95,66 +95,47 @@ exports.searchWorknetDept = async (req, res) => {
     }
 
     try {
-        // 1. 고용24 시도 (우리의 메인 데이터 소스 - 차단 우회 시도)
-        if (WORKNET_DEPT_KEY) {
-            try {
-                console.log("🚀 Calling Goyong24 (Primary)...");
-                const url = `https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo213L01.do?authKey=${WORKNET_DEPT_KEY.trim()}&returnType=XML&target=MAJORCD&srchType=K&keyword=${encodeURIComponent(keyword)}`;
-                
-                // [필살기] 실제 브라우저처럼 보이게 헤더 추가 + 타임아웃 5초
-                const response = await axios.get(url, { 
-                    timeout: 5000,
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept': 'application/xml, text/xml, */*'
-                    }
-                });
-                
-                const jsonObj = parser.parse(response.data);
+        // [v1.8.7] 고용24 차단 문제로 인해 커리어넷 단독 시스템으로 전환 (배포 서버 가용성 확보)
+        console.log("🚀 Calling CareerNet (Standard)...");
+        const careerUrl = `https://www.career.go.kr/cnet/openapi/getOpenApi?apiKey=${CAREERNET_API_KEY}&svcType=api&svcCode=MAJOR&contentType=json&gubun=univ_list&searchTitle=${encodeURIComponent(keyword)}`;
+        
+        const response = await axios.get(careerUrl, { timeout: 6000 });
+        const careerData = response.data?.dataSearch?.content || [];
+        
+        const tempResults = [];
+        const seen = new Set();
 
-                if (!jsonObj.GO24?.error && jsonObj.majorsList?.majorList) {
-                    console.log("✅ Goyong24 Success!");
-                    const items = Array.isArray(jsonObj.majorsList.majorList) ? jsonObj.majorsList.majorList : [jsonObj.majorsList.majorList];
-                    
-                    const normalized = items.map(item => {
-                        const getName = (val) => {
-                            if (!val) return "";
-                            return typeof val === 'object' ? (val['#text'] || val[''] || String(val)) : String(val);
-                        };
-                        return {
-                            majorName: getName(item.knowSchDptNm || item.majorNm || "이름 정보 없음"),
-                            detailName: getName(item.knowDtlSchDptNm || item.univNm || "전공 정보")
-                        };
+        // 1. 뭉쳐있는 데이터 낱개로 쪼개기 (De-fragmentation)
+        careerData.forEach(item => {
+            const rawName = item.majorName || item.facilName || "";
+            const splitNames = rawName.split(',').map(n => n.trim()).filter(n => n.length > 0);
+            
+            splitNames.forEach(name => {
+                if (!seen.has(name)) {
+                    seen.add(name);
+                    tempResults.push({
+                        majorName: name,
+                        detailName: item.lClass || "대학교 전공"
                     });
-                    return res.status(200).json({ univSrch: normalized });
                 }
-            } catch (e) {
-                console.warn(`⚠️ Goyong24 attempt failed (${e.message}). Switching to backup...`);
-            }
-        }
-
-        // 2. 고용24 실패 시 커리어넷 백업 (사용자가 못 느끼게 데이터 규격 동일화)
-        console.log("🔄 Running fallback to CareerNet...");
-        const fallbackUrl = `https://www.career.go.kr/cnet/openapi/getOpenApi?apiKey=${CAREERNET_API_KEY}&svcType=api&svcCode=MAJOR&contentType=json&gubun=univ_list&searchTitle=${encodeURIComponent(keyword)}`;
-        
-        const fallbackRes = await axios.get(fallbackUrl, { timeout: 5000 });
-        const careerData = fallbackRes.data?.dataSearch?.content || [];
-        
-        const normalized = careerData.map(item => {
-            const name = item.majorName || item.facilName || "학과명 정보 없음";
-            const detail = (name === item.facilName) ? (item.lClass || "대학교") : (item.facilName || "대학교");
-            return {
-                majorName: name,
-                detailName: detail
-            };
+            });
         });
 
-        console.log(`✅ CareerNet Fallback Success: ${normalized.length} items`);
+        // 2. 관련성 정렬 (Relevance Sorting): 키워드 시작 우선 + 짧은 이름 우선
+        const normalized = tempResults.sort((a, b) => {
+            const aStartsWith = a.majorName.startsWith(keyword);
+            const bStartsWith = b.majorName.startsWith(keyword);
+            if (aStartsWith && !bStartsWith) return -1;
+            if (!aStartsWith && bStartsWith) return 1;
+            return a.majorName.length - b.majorName.length;
+        }).slice(0, 25);
+
+        console.log(`✅ CareerNet Search Success: ${normalized.length} items`);
         res.status(200).json({ univSrch: normalized });
 
     } catch (error) {
         console.error("❌ 학과 검색 최종 에러:", error.message);
-        res.status(500).json({ message: "학과 검색 중 오류가 발생했습니다." });
+        res.status(500).json({ message: "학과 검색 서비스 이용이 일시적으로 제한되었습니다." });
     }
 };
 
@@ -453,15 +434,15 @@ exports.saveResume = async (req, res) => {
                     title: resumeData.title,
                     education: resumeData.education,
                     skills: resumeData.skills,
-                    militaryStatus: resumeData.militaryStatus,
-                    militaryBranch: resumeData.militaryBranch,
-                    militaryRank: resumeData.militaryRank,
-                    militaryStartDate: resumeData.militaryStartDate,
-                    militaryEndDate: resumeData.militaryEndDate,
-                    militaryExemption: resumeData.militaryExemption,
-                    selfIntroGrowth: resumeData.selfIntroGrowth,
-                    selfIntroCharacter: resumeData.selfIntroCharacter,
-                    selfIntroMotivation: resumeData.selfIntroMotivation,
+                    militaryStatus: militaryStatus || null,
+                    militaryBranch: militaryBranch || null,
+                    militaryRank: militaryRank || null,
+                    militaryStartDate: militaryStartDate || null,
+                    militaryEndDate: militaryEndDate || null,
+                    militaryExemption: militaryExemption || null,
+                    selfIntroGrowth: selfIntroGrowth || null,
+                    selfIntroCharacter: selfIntroCharacter || null,
+                    selfIntroMotivation: selfIntroMotivation || null,
                     sectionOrder: resumeData.sectionOrder,
                     projects: {
                         deleteMany: {},
