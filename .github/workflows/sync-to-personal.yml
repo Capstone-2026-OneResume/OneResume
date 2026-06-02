@@ -12,9 +12,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Push to Personal Repo
+        env:
+          PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
         run: |
-          git remote add personal https://${{ secrets.PERSONAL_TOKEN }}@github.com/PARKUNGJUNG/OneResume_.git
+          git remote add personal https://PARKUNGJUNG:${PERSONAL_TOKEN}@github.com/PARKUNGJUNG/OneResume_.git
           git push -f personal main
