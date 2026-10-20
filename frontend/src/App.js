@@ -11,6 +11,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SetupProfile from "./pages/SetupProfile";
 import OAuthCallback from "./pages/OAuthCallback";
+import YouthFairPage from "./pages/YouthFairPage";
 
 function App() {
   // 브라우저 접속 주소 확인 (서브도메인 판별)
@@ -127,6 +128,14 @@ function App() {
         <Router>
           <Routes>
             {/* 각 페이지에 isDarkMode와 필요 시 toggleDarkMode 전달 */}
+                        <Route 
+              path="/fair" 
+              element={<YouthFairPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} 
+            />
+            <Route 
+              path="/youth" 
+              element={<YouthFairPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} 
+            />
             <Route path="/" element={<AuthPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />
             <Route path="/oauth/callback" element={<OAuthCallback />} />
             <Route path="/setup-profile" element={<SetupProfile isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />

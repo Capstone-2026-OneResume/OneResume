@@ -28,4 +28,8 @@ router.post("/match-jd", authMiddleware, aiController.matchJD);
 // AI 맞춤형 자소서 생성 엔드포인트 (신규)
 router.post("/generate-cover-letter", authMiddleware, aiController.generateCoverLetter);
 
+
+// [대덕구 청소년 진로직업 박람회] 2036 차세대 커리어 스캐너 엔드포인트 (부스용 공개 API)
+router.post("/youth-career-scan", aiController.generateYouthCareerProfile);
+
 module.exports = router;

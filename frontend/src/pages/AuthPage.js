@@ -5,12 +5,20 @@ import Signup from "../components/Signup";
 import ForgotPassword from "../components/ForgotPassword";
 import PageLayout from "../components/PageLayout";
 import LegalModal from "../components/LegalModal";
+import YouthCareerScanner from "../components/YouthCareerScanner";
 import logo from "../logo.svg";
 import saraminLogo from "../saramin_logo.svg";
 import jobkoreaLogo from "../jobkorea_logo.svg";
 
 function AuthPage({ isDarkMode, toggleDarkMode }) {
-  const [authMode, setAuthMode] = useState('login'); // 'login', 'signup', 'forgot'
+  const getInitialMode = () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'scanner' || window.location.pathname === '/fair' || window.location.pathname === '/youth') {
+      return 'scanner';
+    }
+    return 'login';
+  };
+  const [authMode, setAuthMode] = useState(getInitialMode); // 'login', 'signup', 'forgot', 'scanner'
   const navigate = useNavigate();
   const [rememberMe, setRememberMe] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
@@ -185,9 +193,47 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
           <header className="text-center mb-10 relative print:hidden flex-shrink-0 px-6">
             <h1 className={`text-4xl md:text-5xl font-black mb-3 tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-800'}`}>OneResume</h1>
             <p className={`font-bold text-base md:text-lg tracking-tight ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>나를 증명하는 가장 완벽한 한 페이지</p>
+          
+            {/* 2026 청소년 진로박람회 특별관 스위처 배너 */}
+            <div className={`inline-flex items-center gap-1.5 p-1 rounded-full border shadow-sm transition-all duration-300 mt-4 ${
+              isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+            }`}>
+              <button
+                type="button"
+                onClick={() => setAuthMode('login')}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  authMode !== 'scanner'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : isDarkMode ? 'text-slate-400 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+              >
+                마스터 이력서
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode('scanner')}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  authMode === 'scanner'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : isDarkMode ? 'text-slate-400 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+              >
+                2036 커리어 스캐너
+              </button>
+            </div>
           </header>
 
           {/* 카드 섹션 - 모바일에서는 카드 스타일을 제거하고 전체 화면 스타일로 전환 */}
+          {authMode === 'scanner' ? (
+            <div className={`w-full max-w-[760px] p-6 md:p-10 rounded-[44px] md:rounded-[56px] border shadow-[0_30px_90px_-20px_rgba(0,0,0,0.35)] transition-all duration-500 ${
+              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
+            }`}>
+              <YouthCareerScanner 
+                isDarkMode={isDarkMode} 
+                onBackToLogin={() => setAuthMode('login')} 
+              />
+            </div>
+          ) : (
           <div className={`relative w-full max-w-[1020px] min-h-[500px] md:min-h-[680px] lg:overflow-hidden lg:rounded-[56px] lg:border lg:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] ${
             isDarkMode 
               ? 'bg-transparent lg:bg-slate-900 lg:border-slate-800' 
@@ -323,6 +369,7 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
             </div>
 
           </div>
+          )}
         </div>
 
         {/* 하단 푸터 - 법적 고지 및 안내 (모바일 겹침 방지를 위해 위치 조정) */}
@@ -358,9 +405,6 @@ function AuthPage({ isDarkMode, toggleDarkMode }) {
           </div>
           <p className="mt-3 text-[10px] opacity-70 font-bold tracking-wider">
             © 2026 OneResume. Created by 박정웅. All rights reserved.
-          </p>
-          <p className="mt-1 text-[9px] opacity-40 font-medium tracking-tight">
-            Logo Design by 김다인
           </p>
         </footer>
 
