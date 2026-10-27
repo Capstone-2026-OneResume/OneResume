@@ -467,23 +467,23 @@ exports.generateYouthCareerProfile = async (req, res) => {
     const fallbackResult = {
       id: scanId,
       name: studentName,
-      targetJob: `2036 차세대 ${category} 수석 엔지니어`,
+      targetJob: `2036 차세대 ${category} 스페셜리스트`,
       category: category,
       originalInterest: studentInterest,
-      whyFit: `오버워치 같은 하이퍼 FPS에서 발휘되는 찰나의 전황 판단력과, 바이크를 타며 도로의 돌발 변수를 통제하는 반사신경은 웹/앱 개발에서 0.1초의 지연도 용납하지 않는 초저지연 시스템을 구축하는 데 결정적인 역량입니다. 여기에 음악을 듣는 리듬감 있는 UX 감각과 디테일을 놓치지 않는 꼼꼼함이 결합되어 완성도 높은 프로덕트를 만듭니다.`,
-      transformedSkill: `밀리초 단위의 실시간 변수를 통제하는 높은 동체시력과 상황 대처 능력을 갖추고 있으며, 찰나의 순간에도 시스템의 안정성과 예외 처리를 철저하게 검증하는 무결성 디버깅 역량을 보유하고 있습니다.`,
-      coreStrengths: ["초저지연 반응 제어", "돌발 예외 케이스 방어", "무결성 디버깅"],
+      whyFit: "현재 일시적인 네트워크 지연 또는 AI 서버 연결 문제로 심층 분석 리포트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      transformedSkill: "현재 AI 응답이 지연되어 세부 역량 문장을 생성할 수 없습니다. 잠시 후 다시 스캔을 진행해 주세요.",
+      coreStrengths: ["분석 재시도 권장", "네트워크 확인", "시스템 복구 중"],
       virtualProjects: [
         {
-          title: "초고속 인터랙션 반응형 모빌리티 플랫폼 구축",
-          description: "돌발 상황 예측 알고리즘을 도입하여 사용자 터치 반응 지연시간을 0.01초 이하로 단축시킨 글로벌 서비스"
+          title: "AI 서비스 연결 대기 중",
+          description: "일시적인 트래픽 증가로 인해 프로젝트 상세 데이터를 로드하지 못했습니다."
         },
         {
-          title: "무결점 실시간 멀티플레이어 웹 엔진 개발",
-          description: "수십만 명의 동시 접속 환경에서도 단 하나의 패킷 유실 없이 완벽한 싱크를 유지시킨 프로젝트"
+          title: "잠시 후 재시도 안내",
+          description: "하단의 '다른 내용으로 해보기'를 눌러 다시 스캔해 주시기 바랍니다."
         }
       ],
-      advice: `${studentName} 님, 바이크를 탈 때의 집중력과 게임에서의 빠른 손놀림, 그리고 꼼꼼한 눈썰미는 IT 업계에서 가장 탐내는 최고의 엔지니어링 재능입니다.`
+      advice: `${studentName} 님, 현재 AI 서버 응답이 지연되고 있습니다. 잠시 후 다시 시도하시면 맞춤형 분석을 확인하실 수 있습니다.`
     };
     youthScanCache.set(scanId, { data: fallbackResult, createdAt: Date.now() });
     return res.json(fallbackResult);

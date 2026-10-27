@@ -143,8 +143,8 @@ export default function YouthFairPage({ isDarkMode, toggleDarkMode }) {
           category: category,
           fitScore: 96,
           originalInterest: interest.trim(),
-          transformedSkill: `일상 속 몰입 경험("${interest.trim()}")을 바탕으로 한 심층 데이터 탐색 및 사용자 중심 문제 해결 역량`,
-          coreStrengths: ["직관적 통찰력", "자기주도 몰입도", "시스템 최적화 감각"],
+          transformedSkill: "현재 AI 서버 연결이 원활하지 않아 세부 문장을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+          coreStrengths: ["네트워크 확인", "잠시 후 재시도", "시스템 복구 중"],
           virtualProjects: [
             {
               title: `Project ${category} Vanguard (2034)`,
@@ -155,7 +155,7 @@ export default function YouthFairPage({ isDarkMode, toggleDarkMode }) {
               description: "복합 사용자 행동 패턴을 분석하여 시스템 처리 속도를 400% 향상시킨 글로벌 서비스 리드"
             }
           ],
-          evalComment: `${name.trim()} 님의 고유한 관심사는 10년 뒤 ${category} 분야에서 가장 차별화된 문제 해결 무기가 될 것입니다. 탁월한 몰입 잠재력을 지니고 있어 2036년 글로벌 IT 업계를 이끌 핵심 인재로 강력히 추천합니다.`
+          evalComment: `${name.trim()} 님, 현재 AI 응답 지연으로 기본 안내가 표시되었습니다. 잠시 후 다시 시도해 주시기 바랍니다.`
         });
         setStep("result");
       }, 2500);
@@ -419,7 +419,6 @@ export default function YouthFairPage({ isDarkMode, toggleDarkMode }) {
             {isSharedView && (
               <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/30 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">📱</span>
                   <p className="text-xs font-semibold text-emerald-400">
                     모바일로 확인 중인 <strong>{result.name}</strong> 님의 커리어 스캔 결과입니다!
                   </p>

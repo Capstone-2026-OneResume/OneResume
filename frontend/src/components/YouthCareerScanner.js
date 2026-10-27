@@ -309,7 +309,7 @@ export default function YouthCareerScanner({ isDarkMode, onBackToLogin }) {
           {isSharedView && (
             <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-blue-400">
-                📱 <strong>{result.name}</strong> 님의 커리어 스캔 결과입니다!
+                <strong>{result.name}</strong> 님의 커리어 스캔 결과입니다!
               </span>
               <button
                 type="button"
