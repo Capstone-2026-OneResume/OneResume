@@ -49,6 +49,51 @@ export default function YouthFairPage({ isDarkMode, toggleDarkMode }) {
   const [result, setResult] = useState(null);
   const [loadingLogIndex, setLoadingLogIndex] = useState(0);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [isSharedView, setIsSharedView] = useState(false);
+
+  // URL Query 파라미터(id 또는 data)로부터 모바일 QR 공유 결과 복원
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const scanId = searchParams.get('id');
+    const encodedData = searchParams.get('data');
+
+    // 1) 초경량 ID 방식 조회 (API 호출)
+    if (scanId) {
+      axios.get(`${API_BASE_URL}/api/ai/youth-career-scan/${scanId}`, { timeout: 10000 })
+        .then((res) => {
+          if (res.data && res.data.name && res.data.targetJob) {
+            setResult(res.data);
+            setName(res.data.name);
+            setInterest(res.data.originalInterest || '');
+            setCategory(res.data.category || '인공지능(AI)');
+            setStep('result');
+            setIsSharedView(true);
+          }
+        })
+        .catch((err) => {
+          console.error('스캔 결과 조회 실패:', err);
+        });
+      return;
+    }
+
+    // 2) 하위 호환용 Data 파라미터 복원
+    if (encodedData) {
+      try {
+        const jsonStr = decodeURIComponent(escape(atob(encodedData)));
+        const parsedResult = JSON.parse(jsonStr);
+        if (parsedResult && parsedResult.name && parsedResult.targetJob) {
+          setResult(parsedResult);
+          setName(parsedResult.name);
+          setInterest(parsedResult.originalInterest || '');
+          setCategory(parsedResult.category || '인공지능(AI)');
+          setStep('result');
+          setIsSharedView(true);
+        }
+      } catch (e) {
+        console.error('공유 데이터 디코딩 실패:', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let interval;
@@ -122,10 +167,31 @@ export default function YouthFairPage({ isDarkMode, toggleDarkMode }) {
     setInterest("");
     setResult(null);
     setStep("input");
+    setIsSharedView(false);
+    if (window.location.search) {
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
   };
 
-  // 현재 브라우저의 전체 URL 기반 QR 링크 (또는 결과 확인용 파라미터)
-  const currentShareUrl = window.location.href;
+  // QR 코드용 모바일 결과 다이렉트 확인 링크 (초경량 ID 단축 URL)
+  const getShareUrl = () => {
+    if (!result) return window.location.href;
+    // 백엔드에서 발급받은 8자리 고유 ID가 있으면 초단축 깔끔 URL 생성 (QR 인식률 100%)
+    const baseUrl = window.location.origin + window.location.pathname;
+    if (result.id) {
+      return `${baseUrl}?id=${result.id}`;
+    }
+    // 백업: ID가 없을 경우에만 Data 인코딩
+    try {
+      const jsonStr = JSON.stringify(result);
+      const base64Data = btoa(unescape(encodeURIComponent(jsonStr)));
+      return `${baseUrl}?data=${base64Data}`;
+    } catch (e) {
+      return window.location.href;
+    }
+  };
+  const currentShareUrl = getShareUrl();
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentShareUrl)}`;
 
   return (
@@ -349,6 +415,23 @@ export default function YouthFairPage({ isDarkMode, toggleDarkMode }) {
         {/* STEP 3: 스캔 결과 리포트 화면 */}
         {step === "result" && result && (
           <div className="animate-fade-in space-y-6">
+
+            {isSharedView && (
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📱</span>
+                  <p className="text-xs font-semibold text-emerald-400">
+                    모바일로 확인 중인 <strong>{result.name}</strong> 님의 커리어 스캔 결과입니다!
+                  </p>
+                </div>
+                <button
+                  onClick={handleReset}
+                  className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white shadow-sm transition"
+                >
+                  나도 해보기
+                </button>
+              </div>
+            )}
 
             {/* 마스터 프로필 카드 */}
             <div className={`p-6 md:p-8 rounded-2xl border shadow-2xl space-y-6 relative overflow-hidden ${

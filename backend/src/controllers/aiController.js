@@ -1,3 +1,16 @@
+// [박람회용] 메모리 캐시 저장소 (결과 24시간 보관)
+const youthScanCache = new Map();
+
+// 1시간마다 만료된 캐시 청소 (메모리 누수 방지)
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, item] of youthScanCache.entries()) {
+    if (now - item.createdAt > 24 * 60 * 60 * 1000) {
+      youthScanCache.delete(id);
+    }
+  }
+}, 60 * 60 * 1000);
+
 const axios = require("axios");
 const prisma = require("../config/prisma");
 
@@ -378,6 +391,8 @@ exports.generateCoverLetter = async (req, res) => {
  */
 exports.generateYouthCareerProfile = async (req, res) => {
   const { name, interest, itCategory } = req.body;
+  const crypto = require("crypto");
+  const scanId = crypto.randomBytes(4).toString("hex"); // 8자리 고유 ID
 
   if (!name || !interest) {
     return res.status(400).json({ message: '이름과 관심사를 모두 입력해주세요.' });
@@ -441,13 +456,16 @@ exports.generateYouthCareerProfile = async (req, res) => {
 
     if (jsonMatch) {
       const result = JSON.parse(jsonMatch[0]);
+      result.id = scanId;
+      youthScanCache.set(scanId, { data: result, createdAt: Date.now() });
       return res.json(result);
     }
     throw new Error('JSON 파싱 실패');
   } catch (error) {
     console.error('🚨 AI 분석 호출 실패:', error.message);
     
-    return res.json({
+    const fallbackResult = {
+      id: scanId,
       name: studentName,
       targetJob: `2036 차세대 ${category} 수석 엔지니어`,
       category: category,
@@ -466,6 +484,25 @@ exports.generateYouthCareerProfile = async (req, res) => {
         }
       ],
       advice: `${studentName} 님, 바이크를 탈 때의 집중력과 게임에서의 빠른 손놀림, 그리고 꼼꼼한 눈썰미는 IT 업계에서 가장 탐내는 최고의 엔지니어링 재능입니다.`
-    });
+    };
+    youthScanCache.set(scanId, { data: fallbackResult, createdAt: Date.now() });
+    return res.json(fallbackResult);
   }
+};
+
+/**
+ * [대덕구 청소년 진로직업 박람회] 고유 ID로 스캔 결과 단건 조회 (QR 코드 스캔용)
+ */
+exports.getYouthCareerProfileById = async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ message: "유효하지 않은 요청입니다." });
+  }
+
+  const cached = youthScanCache.get(id);
+  if (!cached) {
+    return res.status(404).json({ message: "결과를 찾을 수 없거나 보관 기간이 만료되었습니다." });
+  }
+
+  return res.json(cached.data);
 };

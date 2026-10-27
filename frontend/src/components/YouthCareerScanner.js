@@ -34,6 +34,51 @@ export default function YouthCareerScanner({ isDarkMode, onBackToLogin }) {
   const [result, setResult] = useState(null);
   const [loadingLogIndex, setLoadingLogIndex] = useState(0);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [isSharedView, setIsSharedView] = useState(false);
+
+  // URL Query 파라미터(id 또는 data)로부터 모바일 QR 공유 결과 복원
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const scanId = searchParams.get('id');
+    const encodedData = searchParams.get('data');
+
+    // 1) 초경량 ID 방식 조회 (API 호출)
+    if (scanId) {
+      axios.get(`${API_BASE_URL}/api/ai/youth-career-scan/${scanId}`, { timeout: 10000 })
+        .then((res) => {
+          if (res.data && res.data.name && res.data.targetJob) {
+            setResult(res.data);
+            setName(res.data.name);
+            setInterest(res.data.originalInterest || '');
+            setCategory(res.data.category || '인공지능(AI)');
+            setStep('result');
+            setIsSharedView(true);
+          }
+        })
+        .catch((err) => {
+          console.error('스캔 결과 조회 실패:', err);
+        });
+      return;
+    }
+
+    // 2) 하위 호환용 Data 파라미터 복원
+    if (encodedData) {
+      try {
+        const jsonStr = decodeURIComponent(escape(atob(encodedData)));
+        const parsedResult = JSON.parse(jsonStr);
+        if (parsedResult && parsedResult.name && parsedResult.targetJob) {
+          setResult(parsedResult);
+          setName(parsedResult.name);
+          setInterest(parsedResult.originalInterest || '');
+          setCategory(parsedResult.category || '인공지능(AI)');
+          setStep('result');
+          setIsSharedView(true);
+        }
+      } catch (e) {
+        console.error('공유 데이터 디코딩 실패:', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let interval;
@@ -81,6 +126,11 @@ export default function YouthCareerScanner({ isDarkMode, onBackToLogin }) {
     setInterest("");
     setResult(null);
     setStep("input");
+    setIsSharedView(false);
+    if (window.location.search) {
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
   };
 
   const theme = {
@@ -94,7 +144,22 @@ export default function YouthCareerScanner({ isDarkMode, onBackToLogin }) {
 
   const inputBaseClass = `w-full px-5 py-3.5 rounded-[32px] outline-none transition-all font-semibold text-sm ${theme.inputBg} focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 border`;
 
-  const currentShareUrl = window.location.href;
+  // QR 코드용 모바일 결과 다이렉트 확인 링크 (초경량 ID 단축 URL)
+  const getShareUrl = () => {
+    if (!result) return window.location.href;
+    const baseUrl = window.location.origin + window.location.pathname;
+    if (result.id) {
+      return `${baseUrl}?mode=scanner&id=${result.id}`;
+    }
+    try {
+      const jsonStr = JSON.stringify(result);
+      const base64Data = btoa(unescape(encodeURIComponent(jsonStr)));
+      return `${baseUrl}?mode=scanner&data=${base64Data}`;
+    } catch (e) {
+      return window.location.href;
+    }
+  };
+  const currentShareUrl = getShareUrl();
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentShareUrl)}`;
 
   return (

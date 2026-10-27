@@ -31,5 +31,6 @@ router.post("/generate-cover-letter", authMiddleware, aiController.generateCover
 
 // [대덕구 청소년 진로직업 박람회] 2036 차세대 커리어 스캐너 엔드포인트 (부스용 공개 API)
 router.post("/youth-career-scan", aiController.generateYouthCareerProfile);
+router.get("/youth-career-scan/:id", aiController.getYouthCareerProfileById);
 
 module.exports = router;
